@@ -130,12 +130,42 @@
     updateUnreadBadge();
   }
 
+
+  function resetSessionState(showNotice = false) {
+    state = { ...state, sessionId: '', token: '', status: '', unread: 0, incomingCount: 0 };
+    saveState();
+    updateUnreadBadge();
+    const startPanel = document.getElementById('chat-start-panel');
+    const room = document.getElementById('chat-room');
+    const rating = document.getElementById('chat-rating');
+    const status = document.getElementById('chat-status');
+    const messages = document.getElementById('chat-messages');
+    if (startPanel) startPanel.classList.remove('hidden');
+    if (room) room.classList.add('hidden');
+    if (rating) rating.classList.add('hidden');
+    if (messages) messages.innerHTML = '';
+    if (status) {
+      status.textContent = showNotice
+        ? 'Sessão anterior expirada. Inicie um novo atendimento.'
+        : '';
+    }
+    if (poll) {
+      clearInterval(poll);
+      poll = null;
+    }
+  }
+
   async function request(path, opts = {}, withToken = false) {
     const headers = opts.headers || {};
     if (withToken && state.token) headers['X-Chat-Token'] = state.token;
     const res = await fetch(`${API}${path}`, { ...opts, headers });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.message || 'Erro na requisição');
+    if (!res.ok) {
+      const msg = String(data.message || '').toLowerCase();
+      const sessionMissing = withToken && (res.status === 401 || res.status === 404 || msg.includes('sess') && msg.includes('encontr'));
+      if (sessionMissing) resetSessionState(true);
+      throw new Error(data.message || 'Erro na requisição');
+    }
     return data;
   }
 
