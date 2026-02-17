@@ -6,7 +6,7 @@
   <title>Conversor Voz → Texto</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
-<body>
+<body class="page tools-page">
   <header class="topbar">
     <div class="brand">🎤 Conversor Voz → Texto</div>
     <nav><a href="/tools.html">Ferramentas</a></nav>
@@ -32,6 +32,7 @@
     const out = document.getElementById('voice-output');
     let recognition = null;
     let finalTranscript = "";
+    let lastFinalChunk = "";
 
     if (!SR) {
       statusEl.textContent = 'Este navegador não suporta SpeechRecognition. Tente Google Chrome/Edge.';
@@ -51,7 +52,11 @@
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscript += transcript.trim() + \"\n\";
+            const chunk = transcript.trim();
+            if (chunk && chunk !== lastFinalChunk) {
+              finalTranscript += chunk + "\n";
+              lastFinalChunk = chunk;
+            }
           } else {
             interim += transcript;
           }

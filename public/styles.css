@@ -1701,3 +1701,34 @@ canvas {
     display: block;
   }
 }
+
+/* ============================================
+   PADRONIZAÇÃO VISUAL DAS PÁGINAS DE FERRAMENTAS/AJUDA
+   ============================================ */
+.tools-page .tools {
+  width: min(100% - 1.5rem, 980px);
+  margin: 1.2rem auto 2rem;
+  padding: 0.2rem;
+}
+
+.tools-page .card {
+  width: 100%;
+}
+
+.tools-page .list a,
+.tools-page .internal a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.tools-page .internal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+@media (max-width: 768px) {
+  .tools-page .tools {
+    width: min(100% - 1rem, 980px);
+  }
+}

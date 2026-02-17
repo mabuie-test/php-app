@@ -26,5 +26,9 @@
     try { mq.addEventListener('change', onDesktop); } catch (_) {}
   }
 
-  document.addEventListener('DOMContentLoaded', initHamburger);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHamburger);
+  } else {
+    initHamburger();
+  }
 })();
