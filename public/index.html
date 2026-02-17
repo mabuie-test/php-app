@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Livre-se das Tarefas - Plataforma Acadêmica Profissional</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* ESTILOS ADICIONAIS PARA O REDESIGN */
+    :root {
+      --primary: #0b63e6;
+      --primary-dark: #0a56cc;
+      --secondary: #7c3aed;
+      --accent: #06d6a0;
+      --dark: #0f172a;
+      --darker: #020617;
+      --light: #f8fafc;
+      --gray: #64748b;
+      --gray-light: #e2e8f0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--darker);
+      color: var(--light);
+      line-height: 1.6;
+      margin: 0;
+      padding-top: 80px; /* Espaço para o header fixo */
+    }
+
+    /* HEADER COMPACTO E FIXO */
+    header {
+      background: rgba(15, 23, 42, 0.98);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0.8rem 2rem;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 1000;
+      height: 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: white;
+    }
+
+    .logo-text {
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--light), var(--gray-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .tagline {
+      color: var(--gray);
+      font-size: 0.8rem;
+      margin-top: 2px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.2rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .navbar a {
+      color: var(--gray-light);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: color 0.3s;
+      position: relative;
+      padding: 0.4rem 0;
+    }
+
+    .navbar a:hover {
+      color: var(--accent);
+    }
+
+    .navbar a::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--accent);
+      transition: width 0.3s;
+    }
+
+    .navbar a:hover::after {
+      width: 100%;
+    }
+
+    .navbar .ghost {
+      background: transparent;
+      border: 2px solid var(--gray);
+      color: var(--light);
+      padding: 0.4rem 1.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: all 0.3s;
+      margin-left: 0.5rem;
+    }
+
+    .navbar .ghost:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* HERO SECTION MODERNA */
+    .hero {
+      padding: 4rem 2rem 3rem;
+      background: radial-gradient(circle at 20% 30%, rgba(11, 99, 230, 0.15) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 70%, rgba(124, 58, 237, 0.1) 0%, transparent 50%);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero h2 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, var(--light), var(--gray-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.2;
+    }
+
+    .hero > p {
+      font-size: 1.1rem;
+      color: var(--gray);
+      max-width: 600px;
+      margin: 0 auto 1.5rem;
+    }
+
+    /* QUATRO SERVIÇOS PRINCIPAIS EM DESTAQUE */
+    .services-highlight {
+      padding: 3rem 2rem;
+      background: var(--dark);
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      color: var(--light);
+    }
+
+    .section-subtitle {
+      text-align: center;
+      color: var(--gray);
+      max-width: 600px;
+      margin: 0 auto 2.5rem;
+      font-size: 1rem;
+    }
+
+    .services-grid-featured {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .service-featured-card {
+      background: rgba(30, 41, 59, 0.7);
+      border-radius: 16px;
+      padding: 1.8rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      min-height: 280px;
+    }
+
+    .service-featured-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+    }
+
+    .service-featured-card:hover {
+      transform: translateY(-8px);
+      border-color: var(--primary);
+      box-shadow: 0 15px 30px rgba(11, 99, 230, 0.25);
+    }
+
+    .service-icon {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.2rem;
+      font-size: 1.4rem;
+    }
+
+    .service-featured-card h3 {
+      font-size: 1.4rem;
+      margin-bottom: 0.8rem;
+      color: var(--light);
+    }
+
+    .service-features {
+      list-style: none;
+      margin-top: 1.2rem;
+      padding: 0;
+    }
+
+    .service-features li {
+      color: var(--gray-light);
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .service-features li::before {
+      content: '✓';
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .service-cta {
+      margin-top: 1.5rem;
+      color: var(--primary);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    /* HERO GRID DE BENEFÍCIOS */
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      max-width: 1000px;
+      margin: 2rem auto;
+    }
+
+    .hero-grid .pill {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 1.2rem;
+      border-radius: 12px;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: transform 0.3s, border-color 0.3s;
+    }
+
+    .hero-grid .pill:hover {
+      transform: translateY(-3px);
+      border-color: var(--primary);
+    }
+
+    /* CTA BOX */
+    .cta-box {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      padding: 2rem;
+      border-radius: 16px;
+      max-width: 800px;
+      margin: 2.5rem auto 0;
+      box-shadow: 0 15px 35px rgba(11, 99, 230, 0.25);
+    }
+
+    .cta-box p {
+      margin-bottom: 0.8rem;
+      font-size: 1rem;
+    }
+
+    .cta-box strong {
+      font-size: 1.1rem;
+    }
+
+    .cta-links {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .cta-links .btn {
+      padding: 0.7rem 1.8rem;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    .cta-links .btn.ghost {
+      background: transparent;
+      border: 2px solid white;
+      color: white;
+    }
+
+    .cta-links .btn.ghost:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .cta-links .btn {
+      background: white;
+      color: var(--primary);
+      border: none;
+    }
+
+    .cta-links .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(255, 255, 255, 0.2);
+    }
+
+    /* SEÇÃO DE ESTATÍSTICAS */
+    .stats-section {
+      padding: 3rem 2rem;
+      background: rgba(15, 23, 42, 0.5);
+      text-align: center;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1.5rem;
+      max-width: 1000px;
+      margin: 2rem auto 0;
+    }
+
+    .stat-item {
+      padding: 1.2rem;
+    }
+
+    .stat-number {
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+    }
+
+    .stat-label {
+      color: var(--gray);
+      font-size: 0.85rem;
+      margin-top: 0.4rem;
+    }
+
+    /* PROCESSO DE TRABALHO */
+    .process-section {
+      padding: 3rem 2rem;
+      background: var(--dark);
+    }
+
+    .process-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+      max-width: 1000px;
+      margin: 2rem auto 0;
+    }
+
+    .process-step {
+      text-align: center;
+      padding: 1.5rem;
+      position: relative;
+    }
+
+    .step-number {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      font-weight: 800;
+      margin: 0 auto 1.2rem;
+      color: white;
+    }
+
+    .process-step h4 {
+      font-size: 1.2rem;
+      margin-bottom: 0.8rem;
+      color: var(--light);
+    }
+
+    /* OUTROS SERVIÇOS */
+    .other-services {
+      padding: 3rem 2rem;
+      background: rgba(15, 23, 42, 0.5);
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      max-width: 1200px;
+      margin: 2rem auto 0;
+    }
+
+    .card {
+      background: rgba(30, 41, 59, 0.5);
+      border-radius: 14px;
+      padding: 1.8rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s;
+    }
+
+    .card:hover {
+      border-color: var(--primary);
+      box-shadow: 0 10px 25px rgba(11, 99, 230, 0.15);
+      transform: translateY(-3px);
+    }
+
+    .link-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    .card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 0.8rem;
+      color: var(--light);
+    }
+
+    .card .muted {
+      color: var(--gray);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .card ul {
+      padding-left: 1.2rem;
+      margin-top: 1rem;
+    }
+
+    .card li {
+      color: var(--gray-light);
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    .card strong {
+      color: var(--accent);
+    }
+
+    /* FOOTER MODERNO */
+    .footer {
+      background: var(--darker);
+      padding: 2.5rem 2rem 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .footer div {
+      margin-bottom: 1rem;
+    }
+
+    .footer strong {
+      display: block;
+      font-size: 1.1rem;
+      margin-bottom: 0.8rem;
+      color: var(--light);
+    }
+
+    .footer p {
+      margin: 0.4rem 0;
+    }
+
+    .footer a {
+      color: var(--gray);
+      text-decoration: none;
+      transition: color 0.3s;
+      font-size: 0.95rem;
+    }
+
+    .footer a:hover {
+      color: var(--accent);
+    }
+
+    .footer .muted {
+      margin-top: 1rem;
+      color: var(--gray);
+      font-size: 0.85rem;
+    }
+
+    .social-icon {
+      margin-right: 0.3rem;
+    }
+
+    /* RESPONSIVIDADE */
+    @media (max-width: 768px) {
+      body {
+        padding-top: 120px; /* Mais espaço para header em mobile */
+      }
+      
+      header {
+        height: auto;
+        padding: 0.8rem 1rem;
+      }
+      
+      .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.8rem;
+      }
+      
+      .nav-links {
+        width: 100%;
+        justify-content: space-between;
+        gap: 0.8rem;
+      }
+      
+      .navbar a {
+        font-size: 0.9rem;
+      }
+      
+      .navbar .ghost {
+        padding: 0.3rem 1rem;
+        font-size: 0.85rem;
+      }
+      
+      .hero {
+        padding: 2rem 1rem 2rem;
+      }
+      
+      .hero h2 {
+        font-size: 1.8rem;
+      }
+      
+      .services-grid-featured,
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .cta-links {
+        flex-direction: column;
+      }
+      
+      .cta-links .btn {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .hero-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .footer {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .nav-links {
+        flex-wrap: wrap;
+      }
+      
+      .navbar a {
+        font-size: 0.85rem;
+      }
+      
+      .hero h2 {
+        font-size: 1.6rem;
+      }
+    }
+
+    /* ANIMAÇÕES */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in {
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    .stagger-1 { animation-delay: 0.1s; }
+    .stagger-2 { animation-delay: 0.2s; }
+    .stagger-3 { animation-delay: 0.3s; }
+    .stagger-4 { animation-delay: 0.4s; }
+
+    /* REFERRAL BANNER */
+    #referral-banner {
+      background: rgba(6, 214, 160, 0.1);
+      color: var(--accent);
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      display: inline-block;
+      margin-bottom: 1rem;
+      border: 1px solid rgba(6, 214, 160, 0.3);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- HEADER COMPACTO -->
+  <header>
+    <div class="header-content">
+      <div class="logo-container">
+        <div class="logo-icon">L</div>
+        <div>
+          <div class="logo-text">Livre-se das Tarefas</div>
+          <div class="tagline">"Conhecimento que transforma, apoio que respeita a nossa cultura."</div>
+        </div>
+      </div>
+      
+      <nav class="navbar">
+        <div class="nav-links">
+          <a class="anon-only" href="/login.html">Login</a>
+          <a class="anon-only" href="/register.html">Registo</a>
+          <a href="/order.html" class="auth-only">Encomendas</a>
+          <a href="/documents.html" class="auth-only">Documentos</a>
+          <a href="/affiliates.html" class="auth-only">Afiliados</a>
+          <a href="/services.html">Serviços</a>
+          <a href="/admin.html" class="admin-only auth-only">Admin</a>
+          <a href="/terms.html">Termos</a>
+          <button id="logout" class="ghost auth-only">Sair</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="hero fade-in">
+    <h2>Plataforma completa para trabalhos académicos</h2>
+    <p>Serviços especializados com acompanhamento personalizado e garantia de qualidade.</p>
+    <p id="referral-banner"></p>
+  </section>
+
+  <!-- QUATRO SERVIÇOS PRINCIPAIS EM DESTAQUE -->
+  <section class="services-highlight">
+    <h2 class="section-title fade-in">Serviços Principais</h2>
+    <p class="section-subtitle fade-in">Clique em qualquer serviço para começar imediatamente</p>
+    
+    <div class="services-grid-featured">
+      <!-- SERVIÇO 1: ENCOMENDAS -->
+      <a href="/order.html" class="service-featured-card fade-in stagger-1">
+        <div class="service-icon">
+          <i class="fas fa-file-alt"></i>
+        </div>
+        <h3>Encomendas Acadêmicas</h3>
+        <p>TCCs, artigos, monografias e trabalhos completos com confirmação detalhada.</p>
+        <ul class="service-features">
+          <li>Formulário com simulação de preço</li>
+          <li>Upload seguro de materiais</li>
+          <li>Fatura com detalhamento completo</li>
+          <li>Acompanhamento em tempo real</li>
+        </ul>
+        <div class="service-cta">
+          <span>Criar Encomenda</span>
+          <i class="fas fa-arrow-right"></i>
+        </div>
+      </a>
+      
+      <!-- SERVIÇO 2: SERVIÇOS ESPECIALIZADOS -->
+      <a href="/services.html" class="service-featured-card fade-in stagger-2">
+        <div class="service-icon">
+          <i class="fas fa-th-list"></i>
+        </div>
+        <h3>Serviços Especializados</h3>
+        <p>Revisões, estatística, apresentações, CVs e serviços específicos por demanda.</p>
+        <ul class="service-features">
+          <li>Revisão linguística e formatação</li>
+          <li>Análise estatística (SPSS/R/Python)</li>
+          <li>Apresentações e defesas</li>
+          <li>CVs e cartas de candidatura</li>
+        </ul>
+        <div class="service-cta">
+          <span>Ver Todos Serviços</span>
+          <i class="fas fa-arrow-right"></i>
+        </div>
+      </a>
+      
+      <!-- SERVIÇO 3: FATURAS E DOCUMENTOS -->
+      <a href="/documents.html" class="service-featured-card auth-only fade-in stagger-3">
+        <div class="service-icon">
+          <i class="fas fa-receipt"></i>
+        </div>
+        <h3>Faturas e Documentos</h3>
+        <p>Acesse todas as suas faturas, documentos finais e histórico de trabalhos.</p>
+        <ul class="service-features">
+          <li>Visualização detalhada de faturas</li>
+          <li>Download de documentos finais</li>
+          <li>Sistema de feedback e avaliação</li>
+          <li>Histórico completo de encomendas</li>
+        </ul>
+        <div class="service-cta">
+          <span>Acessar Documentos</span>
+          <i class="fas fa-arrow-right"></i>
+        </div>
+      </a>
+      
+      <!-- SERVIÇO 4: PROGRAMA DE AFILIADOS -->
+      <a href="/affiliates.html" class="service-featured-card auth-only fade-in">
+        <div class="service-icon">
+          <i class="fas fa-handshake"></i>
+        </div>
+        <h3>Programa de Afiliados</h3>
+        <p>Indique amigos e ganhe 18% em cada transação realizada pelos seus indicados.</p>
+        <ul class="service-features">
+          <li>Comissão de 18% por indicação</li>
+          <li>Link personalizado de convite</li>
+          <li>Painel de acompanhamento</li>
+          <li>Saque via M-Pesa disponível</li>
+        </ul>
+        <div class="service-cta">
+          <span>Ver Painel de Afiliados</span>
+          <i class="fas fa-arrow-right"></i>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- BENEFÍCIOS -->
+  <section class="hero">
+    <div class="hero-grid">
+      <div class="pill stagger-1">⏱️ Prazo de pagamento e entrega monitorados</div>
+      <div class="pill stagger-2">📄 Fatura detalhada com fatores de preço</div>
+      <div class="pill stagger-3">🔒 Upload seguro de comprovativos e materiais</div>
+      <div class="pill">🎓 Suporte a TCC, resumos e projetos práticos</div>
+    </div>
+    
+    <div class="cta-box fade-in">
+      <p>Veja o preço antes de confirmar e receba instruções de pagamento instantaneamente.</p>
+      <p><strong>Pague via M-Pesa nº 851619970, titular Maria António Chicavele.</strong></p>
+      <div class="cta-links">
+        <a class="btn ghost" href="/order.html">
+          <i class="fas fa-file-alt"></i> Nova encomenda
+        </a>
+        <a class="btn" href="/services.html">
+          <i class="fas fa-th-list"></i> Serviços especializados
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ESTATÍSTICAS -->
+  <section class="stats-section">
+    <div class="stats-grid">
+      <div class="stat-item fade-in">
+        <div class="stat-number">500+</div>
+        <div class="stat-label">Trabalhos Entregues</div>
+      </div>
+      <div class="stat-item fade-in stagger-1">
+        <div class="stat-number">98%</div>
+        <div class="stat-label">Taxa de Satisfação</div>
+      </div>
+      <div class="stat-item fade-in stagger-2">
+        <div class="stat-number">24/7</div>
+        <div class="stat-label">Suporte Disponível</div>
+      </div>
+      <div class="stat-item fade-in stagger-3">
+        <div class="stat-number">18%</div>
+        <div class="stat-label">Comissão Afiliados</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROCESSO DE TRABALHO -->
+  <section class="process-section">
+    <h2 class="section-title fade-in">Como Funciona</h2>
+    <p class="section-subtitle fade-in">Processo simples em 4 passos</p>
+    
+    <div class="process-steps">
+      <div class="process-step fade-in">
+        <div class="step-number">1</div>
+        <h4>Escolha o Serviço</h4>
+        <p>Selecione entre Encomendas, Serviços Especializados ou outros</p>
+      </div>
+      
+      <div class="process-step fade-in stagger-1">
+        <div class="step-number">2</div>
+        <h4>Receba a Fatura</h4>
+        <p>Obtenha uma fatura detalhada com valor e prazo estimado</p>
+      </div>
+      
+      <div class="process-step fade-in stagger-2">
+        <div class="step-number">3</div>
+        <h4>Faça o Pagamento</h4>
+        <p>Pague via M-Pesa e envie o comprovativo na plataforma</p>
+      </div>
+      
+      <div class="process-step fade-in stagger-3">
+        <div class="step-number">4</div>
+        <h4>Receba o Trabalho</h4>
+        <p>Acompanhe o progresso e receba o trabalho finalizado</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- OUTROS SERVIÇOS -->
+  <section class="other-services">
+    <h2 class="section-title fade-in">Mais Funcionalidades</h2>
+    <p class="section-subtitle fade-in">Descubra tudo o que nossa plataforma oferece</p>
+    
+    <div class="cards-grid">
+      <div class="card fade-in">
+        <h3>Confiança e Controlo</h3>
+        <p class="muted">Auditoria automática com IP e horário, dashboards em tempo real e selos claros de estados.</p>
+        <ul>
+          <li>Logs das principais ações e estatísticas em gráfico</li>
+          <li>Páginas dedicadas para faturas, pedidos e documentos</li>
+          <li>Alertas por email em cada ponto crítico</li>
+        </ul>
+      </div>
+      
+      <div class="card fade-in stagger-1">
+        <h3>Catálogo Completo</h3>
+        <p class="muted">Oferecemos todos os serviços acadêmicos que você precisa em um só lugar.</p>
+        <ul>
+          <li>Revisão linguística e normalização (APA, ABNT, MLA, Chicago, Vancouver, IEEE)</li>
+          <li>Consultoria estatística (SPSS/R/Python) e visualização de dados</li>
+          <li>Apresentações/defesas, CV e cartas de candidatura</li>
+          <li>Verificação de plágio, referências e <strong>resumos executivos</strong></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div>
+      <strong>Contacto Directo</strong>
+      <p><a href="tel:+258851619970"><i class="fas fa-phone social-icon"></i> +258 851 619 970</a></p>
+      <p><a href="mailto:suporte@fluxosoftwares.com"><i class="fas fa-envelope social-icon"></i> suporte@fluxosoftwares.com</a></p>
+      <p><strong>M-Pesa:</strong> 851619970 (Maria António Chicavele)</p>
+    </div>
+    
+    <div>
+      <strong>Redes Sociais</strong>
+      <p><a href="https://wa.me/258851619970" target="_blank"><i class="fab fa-whatsapp social-icon"></i> WhatsApp</a></p>
+      <p><a href="https://www.instagram.com" target="_blank"><i class="fab fa-instagram social-icon"></i> Instagram</a></p>
+      <p><a href="https://www.facebook.com" target="_blank"><i class="fab fa-facebook social-icon"></i> Facebook</a></p>
+    </div>
+    
+    <div>
+      <strong>Links Úteis</strong>
+      <p><a href="/terms.html"><i class="fas fa-file-contract social-icon"></i> Termos e Condições</a></p>
+      <p><a href="/login.html"><i class="fas fa-sign-in-alt social-icon"></i> Área de Cliente</a></p>
+      <p><a href="/register.html"><i class="fas fa-user-plus social-icon"></i> Criar Conta</a></p>
+    </div>
+    
+    <div>
+      <p class="muted">© 2024 Fluxosoftwares</p>
+      <p class="muted" style="margin-top: 0.5rem; font-size: 0.9rem;">
+        "Conhecimento que transforma, apoio que respeita a nossa cultura."
+      </p>
+    </div>
+  </footer>
+  <!--Start of Tawk.to Script-->
+<script type="text/javascript">
+var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+(function(){
+var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+s1.async=true;
+s1.src='https://embed.tawk.to/698cc698d7c87b1c3c0621a1/1jh6ufh8h';
+s1.charset='UTF-8';
+s1.setAttribute('crossorigin','*');
+s0.parentNode.insertBefore(s1,s0);
+})();
+</script>
+<!--End of Tawk.to Script-->
+  <script src="/main.js"></script>
+  <script>
+    // Script para animações e funcionalidades
+    document.addEventListener('DOMContentLoaded', function() {
+      // Verificar autenticação
+      const token = localStorage.getItem('token');
+      const role = localStorage.getItem('role');
+      
+      // Mostrar/ocultar elementos baseados na autenticação
+      document.querySelectorAll('.auth-only').forEach(el => {
+        el.style.display = token ? 'block' : 'none';
+      });
+      
+      document.querySelectorAll('.anon-only').forEach(el => {
+        el.style.display = token ? 'none' : 'inline-flex';
+      });
+      
+      document.querySelectorAll('.admin-only').forEach(el => {
+        el.style.display = role === 'admin' ? 'inline-flex' : 'none';
+      });
+      
+      // Logout
+      document.getElementById('logout')?.addEventListener('click', function() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        window.location.href = '/login.html';
+      });
+      
+      // Referral banner
+      const referralCode = localStorage.getItem('referral_ref');
+      const referralBanner = document.getElementById('referral-banner');
+      if (referralCode && referralBanner) {
+        referralBanner.innerHTML = `🎯 Indicação ativa: <strong>${referralCode}</strong>`;
+        referralBanner.style.display = 'inline-block';
+      } else if (referralBanner) {
+        referralBanner.style.display = 'none';
+      }
+      
+      // Animações ao scroll
+      const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      };
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('fade-in');
+          }
+        });
+      }, observerOptions);
+      
+      // Observar elementos para animação
+      document.querySelectorAll('.service-featured-card, .card, .stat-item, .process-step, .pill').forEach(el => {
+        observer.observe(el);
+      });
+    });
+  </script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5056181814196719"
+     crossorigin="anonymous"></script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+const apiBase = '/api';
+let authToken = localStorage.getItem('token') || '';
+
+function captureReferral() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('ref');
+  if (code) {
+    localStorage.setItem('referral_ref', code);
+  }
+}
+
+captureReferral();
+
+function toggleNav() {
+  const role = localStorage.getItem('role');
+  document.querySelectorAll('.anon-only').forEach((el) => (el.style.display = authToken ? 'none' : 'inline-flex'));
+  document.querySelectorAll('.auth-only').forEach((el) => (el.style.display = authToken ? 'inline-flex' : 'none'));
+  document.querySelectorAll('.admin-only').forEach((el) => (el.style.display = role === 'admin' ? 'inline-flex' : 'none'));
+  const logout = document.getElementById('logout');
+  if (logout) {
+    logout.onclick = () => {
+      authToken = '';
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      toggleNav();
+    };
+  }
+}
+
+function renderReferralTag() {
+  const tag = document.getElementById('referral-indicator');
+  if (!tag) return;
+  const code = localStorage.getItem('referral_ref');
+  if (code) {
+    tag.textContent = `Indicação aplicada: ${code}`;
+    tag.classList.remove('hidden');
+  }
+}
+
+function handleLogin(token, role) {
+  if (token) {
+    authToken = token;
+    localStorage.setItem('token', token);
+    if (role) localStorage.setItem('role', role);
+    toggleNav();
+    window.location.href = role === 'admin' ? '/admin.html' : '/';
+  }
+}
+
+async function requestReset(email) {
+  const res = await fetch(`${apiBase}/auth/password/forgot`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Erro ao enviar email');
+  return data;
+}
+
+async function resetPassword(payload) {
+  const res = await fetch(`${apiBase}/auth/password/reset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Erro ao redefinir palavra-passe');
+  return data;
+}
+
+const signupForm = document.getElementById('signup-form');
+if (signupForm) {
+  signupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = Object.fromEntries(new FormData(signupForm).entries());
+    const ref = localStorage.getItem('referral_ref');
+    if (ref) payload.referred_by = ref;
+    const res = await fetch(`${apiBase}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (res.ok && data.token) {
+      handleLogin(data.token, data.user?.role);
+    } else {
+      alert(data.message || 'Erro no registo');
+    }
+  });
+}
+
+const signinForm = document.getElementById('signin-form');
+if (signinForm) {
+  signinForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = Object.fromEntries(new FormData(signinForm).entries());
+    const res = await fetch(`${apiBase}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (res.ok && data.token) {
+      handleLogin(data.token, data.user?.role);
+    } else {
+      alert(data.message || 'Erro no login');
+    }
+  });
+}
+
+const forgotForm = document.getElementById('forgot-form');
+if (forgotForm) {
+  forgotForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await requestReset(forgotForm.email.value);
+      alert('Enviámos um código e link para o seu email.');
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+}
+
+const resetForm = document.getElementById('reset-form');
+if (resetForm) {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('email')) resetForm.email.value = params.get('email');
+  if (params.get('code')) resetForm.code.value = params.get('code');
+  resetForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = Object.fromEntries(new FormData(resetForm).entries());
+    try {
+      await resetPassword(payload);
+      alert('Palavra-passe atualizada. Faça login novamente.');
+      window.location.href = '/login.html';
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+}
+
+toggleNav();
+renderReferralTag();
+
+const storedRole = localStorage.getItem('role');
+if (authToken && window.location.pathname !== '/') {
+  window.location.href = storedRole === 'admin' ? '/admin.html' : '/';
+}
