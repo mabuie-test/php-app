@@ -12,7 +12,9 @@ function captureReferralAttribution() {
   const params = new URLSearchParams(window.location.search);
   const ref = params.get('ref');
   if (ref) {
-    localStorage.setItem('referral_ref', ref);
+    sessionStorage.setItem('referral_ref', ref);
+    sessionStorage.setItem('referral_ref_ts', String(Date.now()));
+    localStorage.removeItem('referral_ref');
     const banner = document.getElementById('referral-banner');
     if (banner) {
       banner.textContent = `Ligação de indicação aplicada: ${ref}`;

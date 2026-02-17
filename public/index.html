@@ -955,7 +955,7 @@
       });
       
       // Referral banner
-      const referralCode = localStorage.getItem('referral_ref');
+      const referralCode = sessionStorage.getItem('referral_ref') || localStorage.getItem('referral_ref');
       const referralBanner = document.getElementById('referral-banner');
       if (referralCode && referralBanner) {
         referralBanner.innerHTML = `🎯 Indicação ativa: <strong>${referralCode}</strong>`;

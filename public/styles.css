@@ -1662,6 +1662,78 @@ canvas {
   }
 }
 
+
+#support-modal .modal-content.support-terminal {
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#support-modal .support-grid {
+  flex: 1;
+  min-height: 0;
+}
+
+#support-modal #support-sessions,
+#support-modal #support-messages {
+  max-height: none;
+}
+
+#support-modal #support-messages {
+  min-height: 220px;
+  height: 100%;
+}
+
+#support-modal .support-grid > div:last-child {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+#support-modal .chat-compose {
+  margin-top: auto;
+}
+
+@media (max-width: 768px) {
+  #support-modal {
+    align-items: flex-start;
+    padding: 0.5rem;
+  }
+
+  #support-modal .modal-content.support-terminal {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 95vh;
+    padding: 0.8rem;
+    overflow-y: auto;
+  }
+
+  #support-modal .card-header {
+    position: sticky;
+    top: 0;
+    background: var(--dark);
+    z-index: 2;
+    padding-bottom: 0.45rem;
+  }
+
+  #support-modal .chat-compose {
+    position: sticky;
+    bottom: 0;
+    background: var(--dark);
+    padding-top: 0.45rem;
+  }
+
+  #support-modal .chat-compose .inline-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #support-modal .chat-compose .inline-group > * {
+    width: 100%;
+  }
+}
+
 /* ============================================
    HAMBURGUER MOBILE COMPACTO
    ============================================ */
