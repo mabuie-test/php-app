@@ -31,7 +31,13 @@
     const statusEl = document.getElementById('voice-status');
     const out = document.getElementById('voice-output');
     let recognition = null;
-    let committedTranscript = '';
+    let finalByIndex = [];
+
+    function renderTranscript(interim = '') {
+      const finalText = finalByIndex.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+      const interimText = (interim || '').replace(/\s+/g, ' ').trim();
+      out.value = `${finalText}${interimText ? `\n${interimText}` : ''}`.trim();
+    }
 
     if (!SR) {
       statusEl.textContent = 'Este navegador não suporta SpeechRecognition. Tente Google Chrome/Edge.';
@@ -47,22 +53,24 @@
       recognition.onerror = (e) => statusEl.textContent = `Erro: ${e.error}`;
       recognition.onend = () => statusEl.textContent = 'Parado.';
       recognition.onresult = (event) => {
-        const finalParts = [];
         let interim = '';
 
-        for (let i = 0; i < event.results.length; i++) {
+        for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript.trim();
           if (!transcript) continue;
-          if (event.results[i].isFinal) finalParts.push(transcript);
-          else interim += `${transcript} `;
+
+          if (event.results[i].isFinal) {
+            finalByIndex[i] = transcript;
+          } else {
+            interim += `${transcript} `;
+          }
         }
 
-        committedTranscript = finalParts.join('\n');
-        out.value = `${committedTranscript}${interim ? `\n${interim.trim()}` : ''}`.trim();
+        renderTranscript(interim);
       };
 
       document.getElementById('voice-start').onclick = () => {
-        if (!out.value.trim()) committedTranscript = '';
+        if (!out.value.trim()) finalByIndex = [];
         recognition.start();
       };
       document.getElementById('voice-stop').onclick = () => recognition.stop();

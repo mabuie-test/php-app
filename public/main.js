@@ -19,26 +19,17 @@ function captureReferralAttribution() {
       banner.classList.add('pill');
     }
 
-    const clickKey = `affiliate_click_${ref}`;
-    const lastClick = Number(localStorage.getItem(clickKey) || 0);
-    const now = Date.now();
-    const ONE_DAY = 24 * 60 * 60 * 1000;
-
-    if (now - lastClick > ONE_DAY) {
-      let visitor = localStorage.getItem('affiliate_visitor_id');
-      if (!visitor) {
-        visitor = `v_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
-        localStorage.setItem('affiliate_visitor_id', visitor);
-      }
-
-      fetch(`${apiBase}/affiliates/click`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: ref, visitor }),
-      }).catch(() => {});
-
-      localStorage.setItem(clickKey, String(now));
+    let visitor = localStorage.getItem('affiliate_visitor_id');
+    if (!visitor) {
+      visitor = `v_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+      localStorage.setItem('affiliate_visitor_id', visitor);
     }
+
+    fetch(`${apiBase}/affiliates/click`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: ref, visitor }),
+    }).catch(() => {});
   }
 }
 

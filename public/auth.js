@@ -4,9 +4,21 @@ let authToken = localStorage.getItem('token') || '';
 function captureReferral() {
   const params = new URLSearchParams(window.location.search);
   const code = params.get('ref');
-  if (code) {
-    localStorage.setItem('referral_ref', code);
+  if (!code) return;
+
+  localStorage.setItem('referral_ref', code);
+
+  let visitor = localStorage.getItem('affiliate_visitor_id');
+  if (!visitor) {
+    visitor = `v_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+    localStorage.setItem('affiliate_visitor_id', visitor);
   }
+
+  fetch(`${apiBase}/affiliates/click`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, visitor }),
+  }).catch(() => {});
 }
 
 captureReferral();
