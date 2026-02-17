@@ -810,6 +810,10 @@ body.auth-page {
   gap: 16px;
 }
 
+.cards-grid > .card.wide {
+  grid-column: 1 / -1;
+}
+
 .stacked {
   display: flex;
   flex-direction: column;

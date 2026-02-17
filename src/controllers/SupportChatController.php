@@ -142,14 +142,13 @@ class SupportChatController
         $actorName = $session['customer_name'] ?? 'Cliente';
         $actorType = 'customer';
 
-        try {
-            $admin = Auth::requireUser();
-            if (($admin['role'] ?? '') === 'admin') {
-                $isAdmin = true;
-                $actorType = 'admin';
-                $actorName = $admin['name'] ?? $admin['email'] ?? 'Agente';
-            }
-        } catch (\Throwable $e) {
+        $authUser = Auth::userFromBearer();
+        if ($authUser && ($authUser['role'] ?? '') === 'admin') {
+            $isAdmin = true;
+            $admin = $authUser;
+            $actorType = 'admin';
+            $actorName = $authUser['name'] ?? $authUser['email'] ?? 'Agente';
+        } else {
             $token = self::customerTokenFromRequest();
             if (($session['token'] ?? '') !== $token) {
                 Response::json(['message' => 'Token de chat inválido'], 401);
@@ -210,11 +209,9 @@ class SupportChatController
         }
         $session = $store['sessions'][$idx];
 
-        $allowed = false;
-        try {
-            $admin = Auth::requireUser();
-            if (($admin['role'] ?? '') === 'admin') $allowed = true;
-        } catch (\Throwable $e) {
+        $authUser = Auth::userFromBearer();
+        $allowed = $authUser && (($authUser['role'] ?? '') === 'admin');
+        if (!$allowed) {
             $allowed = (($session['token'] ?? '') === self::customerTokenFromRequest());
         }
 

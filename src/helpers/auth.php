@@ -43,6 +43,27 @@ class Auth
         }
     }
 
+
+    public static function userFromBearer(): ?array
+    {
+        $headers = getallheaders();
+        $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+        if (!str_starts_with($authHeader, 'Bearer ')) {
+            return null;
+        }
+        $token = substr($authHeader, 7);
+        try {
+            $decoded = JWT::decode($token, new Key(Config::get('JWT_SECRET'), 'HS256'));
+            $user = User::findById($decoded->sub);
+            if (!$user || !$user['active']) {
+                return null;
+            }
+            return $user;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
     public static function requireAdmin(): array
     {
         $user = self::requireUser();
