@@ -10,17 +10,30 @@
     btn.type = 'button';
     btn.className = 'mobile-hamburger';
     btn.setAttribute('aria-label', 'Abrir menu');
+    btn.setAttribute('aria-expanded', 'false');
     btn.innerHTML = '<span></span><span></span><span></span>';
 
+    const closeMenu = () => {
+      document.body.classList.remove('navbar-open');
+      btn.setAttribute('aria-expanded', 'false');
+    };
+
     btn.addEventListener('click', () => {
-      document.body.classList.toggle('navbar-open');
+      const isOpen = document.body.classList.toggle('navbar-open');
+      btn.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    nav.querySelectorAll('a,button').forEach((el) => {
+      el.addEventListener('click', () => {
+        if (window.innerWidth <= 768) closeMenu();
+      });
     });
 
     header.insertBefore(btn, header.firstChild);
 
     const mq = window.matchMedia('(min-width: 769px)');
     function onDesktop() {
-      if (mq.matches) document.body.classList.remove('navbar-open');
+      if (mq.matches) closeMenu();
     }
     onDesktop();
     try { mq.addEventListener('change', onDesktop); } catch (_) {}

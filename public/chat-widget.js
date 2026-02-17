@@ -4,7 +4,7 @@
   const EMOJIS = ['😀', '😊', '😍', '🤝', '🙏', '🔥', '👍', '👏', '🎓', '💬'];
 
   let poll = null;
-  let state = { sessionId: '', token: '', status: '' };
+  let state = { sessionId: '', token: '', status: '', unread: 0, incomingCount: 0 };
 
   function loadState() {
     try {
@@ -35,7 +35,7 @@
     const root = document.createElement('div');
     root.id = 'support-chat-root';
     root.innerHTML = `
-      <button id="support-chat-toggle" title="Atendimento">💬</button>
+      <button id="support-chat-toggle" title="Atendimento">💬<span id="support-chat-badge" class="hidden">0</span></button>
       <div id="support-chat-box" class="hidden">
         <div class="chat-head">
           <strong>Suporte ao cliente</strong>
@@ -71,7 +71,7 @@
 
     const style = document.createElement('style');
     style.textContent = `
-      #support-chat-toggle{position:fixed;right:16px;bottom:16px;border:none;border-radius:999px;width:58px;height:58px;cursor:pointer;background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;font-size:24px;z-index:9998;box-shadow:0 12px 30px rgba(11,99,230,.35)}
+      #support-chat-toggle{position:fixed;right:16px;bottom:16px;border:none;border-radius:999px;width:58px;height:58px;cursor:pointer;background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;font-size:24px;z-index:9998;box-shadow:0 12px 30px rgba(11,99,230,.35)}\n      #support-chat-badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#ef4444;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1}
       #support-chat-box{position:fixed;right:16px;bottom:86px;width:min(380px,calc(100vw - 20px));max-height:80vh;background:#0b1426;border:1px solid rgba(255,255,255,.14);border-radius:14px;overflow:hidden;z-index:9999;display:flex;flex-direction:column}
       #support-chat-box.hidden,.hidden{display:none!important}
       .chat-head{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(11,99,230,.18)}
@@ -113,6 +113,21 @@
       b.dataset.value = String(i);
       document.getElementById('chat-stars').appendChild(b);
     }
+  }
+
+
+  function updateUnreadBadge() {
+    const badge = document.getElementById('support-chat-badge');
+    if (!badge) return;
+    const count = Number(state.unread || 0);
+    badge.textContent = String(count);
+    badge.classList.toggle('hidden', count <= 0);
+  }
+
+  function markAsRead() {
+    state.unread = 0;
+    saveState();
+    updateUnreadBadge();
   }
 
   async function request(path, opts = {}, withToken = false) {
@@ -158,6 +173,16 @@
 
     const shouldRate = state.status === 'waiting_rating' && !data.session?.rating;
     document.getElementById('chat-rating')?.classList.toggle('hidden', !shouldRate);
+
+    const incomingCount = (data.messages || []).filter((m) => m.sender_type === 'admin').length;
+    const boxOpen = !document.getElementById('support-chat-box')?.classList.contains('hidden');
+    if (incomingCount > (state.incomingCount || 0) && !boxOpen) {
+      state.unread = Number(state.unread || 0) + (incomingCount - (state.incomingCount || 0));
+    }
+    state.incomingCount = incomingCount;
+    if (boxOpen) state.unread = 0;
+    saveState();
+    updateUnreadBadge();
   }
 
   async function startChat() {
@@ -209,8 +234,14 @@
   }
 
   function bind() {
-    document.getElementById('support-chat-toggle')?.addEventListener('click', () => document.getElementById('support-chat-box')?.classList.toggle('hidden'));
-    document.getElementById('support-chat-close')?.addEventListener('click', () => document.getElementById('support-chat-box')?.classList.add('hidden'));
+    document.getElementById('support-chat-toggle')?.addEventListener('click', () => {
+      const box = document.getElementById('support-chat-box');
+      box?.classList.toggle('hidden');
+      if (box && !box.classList.contains('hidden')) markAsRead();
+    });
+    document.getElementById('support-chat-close')?.addEventListener('click', () => {
+      document.getElementById('support-chat-box')?.classList.add('hidden');
+    });
     document.getElementById('chat-start-btn')?.addEventListener('click', () => startChat().catch((e) => alert(e.message)));
     document.getElementById('chat-send')?.addEventListener('click', () => sendMessage().catch((e) => alert(e.message)));
     document.getElementById('chat-rate-btn')?.addEventListener('click', () => sendRating().catch((e) => alert(e.message)));
@@ -227,9 +258,11 @@
     build();
     bind();
     loadState();
+    updateUnreadBadge();
     if (state.sessionId && state.token) {
       document.getElementById('chat-start-panel')?.classList.add('hidden');
       document.getElementById('chat-room')?.classList.remove('hidden');
+      markAsRead();
       refresh().catch(() => {});
       poll = setInterval(() => refresh().catch(() => {}), 4000);
     }
