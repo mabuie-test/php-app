@@ -333,8 +333,13 @@ public static function payouts(): void
 
     public static function listUsers(): void
     {
-        self::requireAdmin();
-        Response::json(['users' => User::listAll()]);
+        $admin = self::requireAdmin();
+        $firstAdminId = User::firstAdminId();
+        Response::json([
+            'users' => User::listAll(),
+            'can_delete_users' => $firstAdminId !== null && (int) $admin['id'] === $firstAdminId,
+            'first_admin_id' => $firstAdminId,
+        ]);
     }
 
     /**
@@ -352,6 +357,36 @@ public static function payouts(): void
         // Optionally: when deactivating, invalidate tokens / sessions (requires session store).
         // For now, ensure login checks active status (AuthController should be adjusted accordingly).
         Response::json(['message' => 'Estado atualizado']);
+    }
+
+    public static function deleteUser(): void
+    {
+        $admin = self::requireAdmin();
+        $targetId = (int) ($_POST['user_id'] ?? 0);
+        if ($targetId <= 0) {
+            Response::json(['message' => 'user_id obrigatório'], 400);
+            return;
+        }
+
+        $firstAdminId = User::firstAdminId();
+        if ($firstAdminId === null || (int) $admin['id'] !== $firstAdminId) {
+            Response::json(['message' => 'Apenas o primeiro admin pode eliminar utilizadores'], 403);
+            return;
+        }
+
+        $target = User::findById($targetId);
+        if (!$target) {
+            Response::json(['message' => 'Utilizador não encontrado'], 404);
+            return;
+        }
+        if (($target['role'] ?? '') === 'admin') {
+            Response::json(['message' => 'Não é permitido eliminar administradores'], 400);
+            return;
+        }
+
+        User::deleteNonAdmin($targetId);
+        AuditHelper::log($admin['id'], 'user:delete', ['user_id' => $targetId, 'email' => $target['email'] ?? null]);
+        Response::json(['message' => 'Utilizador eliminado']);
     }
 
     /**

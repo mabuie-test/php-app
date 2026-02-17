@@ -515,7 +515,7 @@ class OrderController
       <tr><td><strong>Complexidade</strong></td><td>' . htmlspecialchars($order['complexidade'] ?? '—') . '</td></tr>
       <tr><td><strong>Urgência</strong></td><td>' . htmlspecialchars($order['urgencia'] ?? '—') . '</td></tr>
       <tr><td><strong>Prazo desejado</strong></td><td>' . htmlspecialchars($order['prazo_entrega'] ?? '—') . '</td></tr>
-      <tr><td><strong>Descrição</strong></td><td>' . htmlspecialchars($order['descricao'] ?? '—') . '</td></tr>
+      <tr><td><strong>Descrição</strong></td><td>' . nl2br(htmlspecialchars($order['descricao'] ?? '—')) . '</td></tr>
       <tr><td><strong>Materiais informados</strong></td><td>' . htmlspecialchars($order['materiais_info'] ?? 'Não') . '</td></tr>
       <tr><td><strong>% uso materiais</strong></td><td>' . htmlspecialchars((string)($order['materiais_percentual'] ?? '—')) . '</td></tr>
     </tbody>

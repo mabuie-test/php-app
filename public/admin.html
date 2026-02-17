@@ -151,7 +151,15 @@
     </a>
 
 
-    <section class="card wide support-terminal" id="support-terminal">
+    <button class="card link-card" id="open-support-terminal" type="button">
+      <h3><i class="fas fa-headset"></i> Terminal de atendimento ao cliente</h3>
+      <p class="muted">Abrir central de atendimento (chat, transferência, anexos e rating).</p>
+    </button>
+
+  </main>
+
+  <div id="support-modal" class="modal hidden" aria-hidden="true">
+    <div class="modal-content support-terminal" style="max-width:1200px;width:96%;">
       <div class="card-header">
         <h3><i class="fas fa-headset"></i> Terminal de atendimento ao cliente</h3>
         <div class="inline-group">
@@ -162,6 +170,7 @@
             <option value="closed">Encerradas</option>
           </select>
           <button class="ghost" id="support-refresh">Atualizar</button>
+          <button class="ghost" id="close-support-terminal">Fechar</button>
         </div>
       </div>
       <div class="support-grid">
@@ -169,6 +178,7 @@
           <div id="support-sessions" class="list"></div>
         </aside>
         <div>
+          <div id="support-rating-preview" class="quote muted" style="margin-bottom:.7rem;display:none"></div>
           <div class="inline-group" style="margin-bottom:.7rem">
             <button id="support-claim" class="btn btn-primary">Assumir atendimento</button>
             <select id="support-transfer-agent"></select>
@@ -185,9 +195,9 @@
           </div>
         </div>
       </div>
-    </section>
+    </div>
+  </div>
 
-  </main>
 
   <!-- FOOTER ORIGINAL COM ÍCONES -->
   <footer class="footer">
@@ -269,5 +279,6 @@
       }
     })();
   </script>
+  <script src="/nav-mobile.js"></script>
 </body>
 </html>

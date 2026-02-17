@@ -277,21 +277,40 @@ async function loadUsers() {
     return;
   }
   list.innerHTML = '';
+  const canDeleteUsers = !!data.can_delete_users;
+
   data.users.forEach((user) => {
     const row = document.createElement('div');
     row.className = 'list-item';
+    const isAdmin = user.role === 'admin';
     row.innerHTML = `
       <div>
         <strong>${user.name}</strong>
         <p class="muted">${user.email} · ${user.role}</p>
       </div>
       <div class="stacked-actions">
-        <button class="ghost" data-id="${user.id}" data-active="${user.active ? '1' : '0'}">${user.active ? 'Desativar' : 'Ativar'}</button>
+        <button class="ghost" data-action="toggle">${user.active ? 'Desativar' : 'Ativar'}</button>
+        ${canDeleteUsers && !isAdmin ? '<button class="ghost" data-action="delete">Eliminar</button>' : ''}
       </div>
     `;
-    row.querySelector('button').onclick = () => toggleUser(user.id, !user.active);
+
+    row.querySelector('[data-action="toggle"]').onclick = () => toggleUser(user.id, !user.active);
+    const delBtn = row.querySelector('[data-action="delete"]');
+    if (delBtn) delBtn.onclick = () => deleteUser(user.id, user.email);
     list.appendChild(row);
   });
+}
+
+async function deleteUser(userId, email) {
+  const ok = await confirmAction(`Eliminar utilizador ${email}? Esta ação não pode ser desfeita.`);
+  if (!ok) return;
+  const form = new FormData();
+  form.set('user_id', userId);
+  const res = await fetch(`${apiBase}/admin/users/delete`, { method: "POST", headers: { Authorization: `Bearer ${authToken}` }, body: form });
+  const data = await res.json();
+  if (!res.ok) return toast(data.message || "Erro ao eliminar utilizador");
+  toast("Utilizador eliminado");
+  loadUsers();
 }
 
 async function toggleUser(userId, active) {

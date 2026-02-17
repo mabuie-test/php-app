@@ -133,6 +133,10 @@ if ($uri === '/api/admin/users/toggle' && $method === 'POST') {
     AdminController::toggleUser();
     return;
 }
+if ($uri === '/api/admin/users/delete' && $method === 'POST') {
+    AdminController::deleteUser();
+    return;
+}
 if ($uri === '/api/admin/feedback' && $method === 'GET') {
     AdminController::feedback();
     return;

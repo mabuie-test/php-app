@@ -1,5 +1,6 @@
 (function () {
-  if (!document.getElementById('support-terminal')) return;
+  const terminalRoot = document.querySelector('.support-terminal');
+  if (!terminalRoot) return;
 
   const api = '/api/support/chat';
   const token = localStorage.getItem('token') || '';
@@ -59,6 +60,18 @@
     if (!activeSessionId) return;
     const data = await req(`/messages?session_id=${encodeURIComponent(activeSessionId)}`);
     renderMessages(data.messages || []);
+    const ratingBox = q('support-rating-preview');
+    if (ratingBox) {
+      const rating = data.session?.rating;
+      const comment = data.session?.rating_comment;
+      if (rating) {
+        ratingBox.style.display = 'block';
+        ratingBox.innerHTML = `⭐ Avaliação do cliente: <strong>${rating}/5</strong>${comment ? ` · ${comment}` : ''}`;
+      } else {
+        ratingBox.style.display = 'none';
+        ratingBox.textContent = '';
+      }
+    }
   }
 
   async function loadAgents() {
@@ -121,6 +134,12 @@
   }
 
   function bind() {
+
+    q('open-support-terminal')?.addEventListener('click', () => {
+      q('support-modal')?.classList.remove('hidden');
+      loadSessions().catch(() => {});
+    });
+    q('close-support-terminal')?.addEventListener('click', () => q('support-modal')?.classList.add('hidden'));
     q('support-refresh')?.addEventListener('click', () => loadSessions().catch((e) => alert(e.message)));
     q('support-session-filter')?.addEventListener('change', () => loadSessions().catch((e) => alert(e.message)));
     q('support-send')?.addEventListener('click', () => sendReply().catch((e) => alert(e.message)));

@@ -28,6 +28,7 @@ async function loadInvoice() {
     const order = data.order;
     const body = document.getElementById('invoice-body');
     const materials = order.materiais_uploads ? JSON.parse(order.materiais_uploads) : [];
+    const descriptionHtml = (order.descricao || '—').replace(/\n/g, '<br>');
     const proofForm = document.getElementById('proof-form');
     if (proofForm) {
       proofForm.dataset.invoice = order.invoice_id || order.id;
@@ -40,7 +41,7 @@ async function loadInvoice() {
       <p><strong>Norma:</strong> ${order.norma || '—'}</p>
       <p><strong>Complexidade:</strong> ${order.complexidade || '—'} · <strong>Urgência:</strong> ${order.urgencia || '—'}</p>
       <p><strong>Prazo desejado:</strong> ${order.prazo_entrega || '—'}</p>
-      <p><strong>Descrição do pedido:</strong> ${order.descricao || '—'}</p>
+      <p><strong>Descrição do pedido:</strong><br>${descriptionHtml}</p>
       <p><strong>Materiais informados:</strong> ${order.materiais_info || 'Não'}</p>
       <p><strong>Percentual de uso dos materiais:</strong> ${order.materiais_percentual || '—'}${order.materiais_percentual ? '%' : ''}</p>
       <p><strong>Valor:</strong> ${order.valor_total || order.total || '—'} MZN</p>
