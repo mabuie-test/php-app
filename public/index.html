@@ -141,6 +141,54 @@
       color: var(--accent);
     }
 
+
+    .help-menu {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .help-menu summary {
+      list-style: none;
+      cursor: pointer;
+      color: var(--gray-light);
+      font-weight: 500;
+      font-size: 0.95rem;
+      padding: 0.4rem 0;
+    }
+
+    .help-menu summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .help-menu-box {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 220px;
+      background: rgba(15, 23, 42, 0.98);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 0.45rem;
+      display: grid;
+      gap: 0.2rem;
+      box-shadow: 0 12px 25px rgba(0,0,0,.3);
+    }
+
+    .help-menu-box a {
+      color: var(--gray-light);
+      text-decoration: none;
+      padding: 0.45rem 0.5rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+    }
+
+    .help-menu-box a:hover {
+      background: rgba(255,255,255,0.08);
+      color: var(--accent);
+    }
+
+
     /* HERO SECTION MODERNA */
     .hero {
       padding: 4rem 2rem 3rem;
@@ -680,6 +728,16 @@
           <a href="/services.html">Serviços</a>
           <a href="/admin.html" class="admin-only auth-only">Admin</a>
           <a href="/terms.html">Termos</a>
+
+          <details class="help-menu">
+            <summary><i class="fas fa-circle-question"></i> Ajuda</summary>
+            <div class="help-menu-box">
+              <a href="/help.html">Centro de Ajuda</a>
+              <a href="/tools.html">Ferramentas</a>
+              <a href="/terms.html">Termos e Condições</a>
+              <a href="mailto:suporte@fluxosoftwares.com">Contactar Suporte</a>
+            </div>
+          </details>
           <button id="logout" class="ghost auth-only">Sair</button>
         </div>
       </nav>
