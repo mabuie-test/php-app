@@ -93,6 +93,10 @@ if ($uri === '/api/affiliates/request-payout' && $method === 'POST') {
     OrderController::requestPayout();
     return;
 }
+if ($uri === '/api/affiliates/click' && $method === 'POST') {
+    OrderController::trackAffiliateClick();
+    return;
+}
 
 // ROTAS DE SERVIÇOS ESPECIALIZADOS
 if ($uri === '/api/services' && $method === 'POST') {

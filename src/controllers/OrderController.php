@@ -12,6 +12,7 @@ use App\Models\Feedback;
 use App\Models\AffiliateCommission;
 use App\Models\AffiliatePayout;
 use App\Models\User;
+use App\Models\Audit;
 use App\Config\Config;
 
 class OrderController
@@ -232,6 +233,13 @@ class OrderController
         $payouts = AffiliatePayout::listForUser($user['id']);
         $outstanding = AffiliatePayout::outstandingForUser($user['id']);
         $available = max(0, AffiliateCommission::totalAvailableForCode($code) - $outstanding);
+        $pdo = \App\Config\Database::pdo();
+        $affStmt = $pdo->prepare('SELECT COUNT(*) FROM users WHERE referred_by = :code');
+        $affStmt->execute([':code' => $code]);
+        $referredCount = (int) $affStmt->fetchColumn();
+
+        $clicks = Audit::affiliateClickStats($code);
+
         Response::json([
             'commissions' => $commissions,
             'totals' => $totals,
@@ -239,6 +247,12 @@ class OrderController
             'code' => $code,
             'available' => $available,
             'outstanding' => $outstanding,
+            'stats' => [
+                'referred_count' => $referredCount,
+                'clicks_total' => $clicks['total'] ?? 0,
+                'clicks_unique' => $clicks['unique'] ?? 0,
+                'clicks_today' => $clicks['today'] ?? 0,
+            ],
         ]);
     }
 
@@ -269,6 +283,34 @@ class OrderController
             Mailer::send($adminEmail, 'Novo levantamento de afiliado', 'O afiliado ' . $user['email'] . ' solicitou ' . $available . ' MZN para ' . ($mpesa ?: 'conta não informada'));
         }
         Response::json(['message' => 'Pedido registado', 'payout_id' => $payoutId]);
+    }
+
+
+    public static function trackAffiliateClick(): void
+    {
+        $body = json_decode(file_get_contents('php://input'), true) ?? [];
+        $code = trim((string) ($body['code'] ?? ''));
+        $visitor = trim((string) ($body['visitor'] ?? ''));
+
+        if ($code === '') {
+            Response::json(['message' => 'Código de afiliado obrigatório'], 400);
+            return;
+        }
+
+        $refUser = User::findByReferralCode($code);
+        if (!$refUser) {
+            Response::json(['message' => 'Código inválido'], 404);
+            return;
+        }
+
+        AuditHelper::log(null, 'affiliate:click', [
+            'code' => $code,
+            'visitor' => $visitor ?: null,
+            'source' => $_SERVER['HTTP_REFERER'] ?? null,
+            'ua' => $_SERVER['HTTP_USER_AGENT'] ?? null,
+        ]);
+
+        Response::json(['message' => 'click tracked']);
     }
 
     public static function notifications(): void

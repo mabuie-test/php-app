@@ -18,6 +18,27 @@ function captureReferralAttribution() {
       banner.textContent = `Ligação de indicação aplicada: ${ref}`;
       banner.classList.add('pill');
     }
+
+    const clickKey = `affiliate_click_${ref}`;
+    const lastClick = Number(localStorage.getItem(clickKey) || 0);
+    const now = Date.now();
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+
+    if (now - lastClick > ONE_DAY) {
+      let visitor = localStorage.getItem('affiliate_visitor_id');
+      if (!visitor) {
+        visitor = `v_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+        localStorage.setItem('affiliate_visitor_id', visitor);
+      }
+
+      fetch(`${apiBase}/affiliates/click`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: ref, visitor }),
+      }).catch(() => {});
+
+      localStorage.setItem(clickKey, String(now));
+    }
   }
 }
 
@@ -247,6 +268,13 @@ async function loadAffiliate() {
         <div><p class="muted">Saldo disponível</p><h4>${data.available ?? 0} MZN</h4></div>
         <div><p class="muted">Em pedido de levantamento</p><h4>${data.outstanding ?? 0} MZN</h4></div>
       </div>
+      <div class="grid metrics">
+        <div><p class="muted">Total de afiliados ativos</p><h4>${data.stats?.referred_count ?? 0}</h4></div>
+        <div><p class="muted">Cliques no link (total)</p><h4>${data.stats?.clicks_total ?? 0}</h4></div>
+        <div><p class="muted">Cliques únicos</p><h4>${data.stats?.clicks_unique ?? 0}</h4></div>
+        <div><p class="muted">Cliques hoje</p><h4>${data.stats?.clicks_today ?? 0}</h4></div>
+      </div>
+      <p class="muted">Privacidade: mostramos apenas números agregados, sem revelar identidade dos clientes afiliados.</p>
       <div class="stacked">
         <label>Número M-Pesa para receber</label>
         <input type="text" id="payout-mpesa" placeholder="84/85xxxxxxx" />
