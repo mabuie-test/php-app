@@ -134,6 +134,44 @@
       <h3><i class="fas fa-comments"></i> Estação de trabalho</h3>
       <p class="muted">Mensagens internas com anexos associados às encomendas.</p>
     </a>
+
+
+    <section class="card wide support-terminal" id="support-terminal">
+      <div class="card-header">
+        <h3><i class="fas fa-headset"></i> Terminal de atendimento ao cliente</h3>
+        <div class="inline-group">
+          <select id="support-session-filter">
+            <option value="">Todas</option>
+            <option value="open">Abertas</option>
+            <option value="waiting_rating">Aguardando avaliação</option>
+            <option value="closed">Encerradas</option>
+          </select>
+          <button class="ghost" id="support-refresh">Atualizar</button>
+        </div>
+      </div>
+      <div class="support-grid">
+        <aside>
+          <div id="support-sessions" class="list"></div>
+        </aside>
+        <div>
+          <div class="inline-group" style="margin-bottom:.7rem">
+            <button id="support-claim" class="btn btn-primary">Assumir atendimento</button>
+            <select id="support-transfer-agent"></select>
+            <button id="support-transfer" class="ghost">Transferir</button>
+            <button id="support-close" class="ghost">Finalizar atendimento</button>
+          </div>
+          <div id="support-messages" class="chat-board"></div>
+          <div class="chat-compose">
+            <textarea id="support-reply" rows="2" placeholder="Responder cliente..."></textarea>
+            <div class="inline-group">
+              <input type="file" id="support-attachment" />
+              <button id="support-send" class="btn btn-primary">Enviar resposta</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- FOOTER ORIGINAL COM ÍCONES -->
@@ -155,6 +193,7 @@
   </footer>
 
   <script src="/admin.js"></script>
+  <script src="/admin-support.js"></script>
   <script>
     // ===== AJUSTE INTELIGENTE DO PADDING-TOP =====
     // NUNCA DEIXA O CONTEÚDO ESCONDIDO ATRÁS DO HEADER

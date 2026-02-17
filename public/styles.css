@@ -1624,3 +1624,36 @@ canvas {
 /* ============================================
    FIM – TODAS AS PÁGINAS COBERTAS
    ============================================ */
+
+/* ============================================
+   TERMINAL DE SUPORTE (admin + widget cliente)
+   ============================================ */
+.support-terminal {
+  width: 100%;
+}
+
+.support-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) 1fr;
+  gap: 1rem;
+}
+
+#support-sessions {
+  max-height: 460px;
+  overflow: auto;
+}
+
+#support-messages {
+  min-height: 320px;
+  max-height: 420px;
+}
+
+#support-reply {
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .support-grid {
+    grid-template-columns: 1fr;
+  }
+}

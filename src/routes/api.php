@@ -5,6 +5,7 @@ use App\Controllers\AdminController;
 use App\Controllers\ServiceController;
 use App\Controllers\CareerController;
 use App\Controllers\ToolsController;
+use App\Controllers\SupportChatController;
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $method = $_SERVER['REQUEST_METHOD'];
@@ -166,6 +167,45 @@ if ($uri === '/api/admin/services' && $method === 'GET') {
 }
 if ($uri === '/api/admin/services/update' && $method === 'POST') {
     ServiceController::updateStatus();
+    return;
+}
+
+
+// ROTAS DE CHAT DE SUPORTE (cliente/admin)
+if ($uri === '/api/support/chat/start' && $method === 'POST') {
+    SupportChatController::start();
+    return;
+}
+if ($uri === '/api/support/chat/message' && $method === 'POST') {
+    SupportChatController::addMessage();
+    return;
+}
+if ($uri === '/api/support/chat/messages' && $method === 'GET') {
+    SupportChatController::messages();
+    return;
+}
+if ($uri === '/api/support/chat/sessions' && $method === 'GET') {
+    SupportChatController::listSessions();
+    return;
+}
+if ($uri === '/api/support/chat/claim' && $method === 'POST') {
+    SupportChatController::claim();
+    return;
+}
+if ($uri === '/api/support/chat/transfer' && $method === 'POST') {
+    SupportChatController::transfer();
+    return;
+}
+if ($uri === '/api/support/chat/close' && $method === 'POST') {
+    SupportChatController::closeSession();
+    return;
+}
+if ($uri === '/api/support/chat/rate' && $method === 'POST') {
+    SupportChatController::rate();
+    return;
+}
+if ($uri === '/api/support/chat/agents' && $method === 'GET') {
+    SupportChatController::agents();
     return;
 }
 
