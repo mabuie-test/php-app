@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin - Leads de Marketing</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="page admin-page">
+  <header>
+    <div class="header-content">
+      <div class="logo-container">
+        <div class="logo-icon">L</div>
+        <div>
+          <div class="logo-text">Painel Admin</div>
+          <div class="tagline">Leads captados via marketing</div>
+        </div>
+      </div>
+      <nav class="navbar">
+        <div class="nav-links">
+          <a href="/admin.html">Dashboard</a>
+          <a href="/admin-metrics.html">Métricas</a>
+          <button id="logout" class="ghost">Sair</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="content">
+    <section class="card">
+      <div class="split">
+        <div>
+          <h2>Leads de Marketing</h2>
+          <p class="muted">Registos com ação <code>marketing:lead</code> (lead magnet e campanhas).</p>
+        </div>
+        <div class="inline-group">
+          <input id="lead-search" placeholder="Filtrar por email/nome" />
+          <button id="lead-refresh" class="ghost">Atualizar</button>
+          <button id="lead-export" class="ghost">Exportar CSV</button>
+        </div>
+      </div>
+      <div id="lead-kpis" class="grid metrics" style="margin-top:1rem"></div>
+      <div id="lead-list" class="list" style="margin-top:1rem"></div>
+    </section>
+  </main>
+
+  <script>
+    const apiBase = '/api';
+    const token = localStorage.getItem('token') || '';
+    if (!token) window.location.href = '/login.html';
+
+    document.getElementById('logout')?.addEventListener('click', () => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      window.location.href = '/login.html';
+    });
+
+    let allLeads = [];
+
+    function render(leads) {
+      const kpis = document.getElementById('lead-kpis');
+      const list = document.getElementById('lead-list');
+      if (!kpis || !list) return;
+
+      const uniqueEmails = new Set(leads.map((l) => l.email).filter(Boolean)).size;
+      const bySource = leads.reduce((acc, l) => {
+        const k = l.source || 'desconhecida';
+        acc[k] = (acc[k] || 0) + 1;
+        return acc;
+      }, {});
+      const topSource = Object.entries(bySource).sort((a,b)=>b[1]-a[1])[0]?.[0] || '—';
+
+      kpis.innerHTML = `
+        <div><p class="muted">Total leads</p><h4>${leads.length}</h4></div>
+        <div><p class="muted">Emails únicos</p><h4>${uniqueEmails}</h4></div>
+        <div><p class="muted">Fonte principal</p><h4>${topSource}</h4></div>
+      `;
+
+      list.innerHTML = '';
+      if (!leads.length) {
+        list.innerHTML = '<div class="muted">Sem leads ainda.</div>';
+        return;
+      }
+
+      leads.forEach((lead) => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        item.innerHTML = `
+          <div>
+            <strong>${lead.name || '—'}</strong>
+            <p class="muted">${lead.email || 'sem email'} ${lead.phone ? ' · ' + lead.phone : ''}</p>
+            <p class="muted">Interesse: ${lead.interest || '—'} · Fonte: ${lead.source || '—'}</p>
+          </div>
+          <span class="badge">${lead.created_at || ''}</span>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function extractLead(audit) {
+      const meta = audit.meta || {};
+      return {
+        name: meta.name || '',
+        email: meta.email || '',
+        phone: meta.phone || '',
+        interest: meta.interest || '',
+        source: meta.source || '',
+        created_at: audit.created_at || '',
+      };
+    }
+
+    async function loadLeads() {
+      const res = await fetch(`${apiBase}/admin/audits`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Erro ao carregar leads');
+      const audits = (data.audits || []).filter((a) => a.action === 'marketing:lead');
+      allLeads = audits.map(extractLead);
+      applyFilter();
+    }
+
+    function applyFilter() {
+      const q = (document.getElementById('lead-search')?.value || '').toLowerCase().trim();
+      if (!q) return render(allLeads);
+      const filtered = allLeads.filter((l) =>
+        [l.name, l.email, l.phone, l.interest, l.source].join(' ').toLowerCase().includes(q)
+      );
+      render(filtered);
+    }
+
+    function exportCsv() {
+      const rows = [['nome','email','telefone','interesse','fonte','data']]
+        .concat(allLeads.map((l) => [l.name, l.email, l.phone, l.interest, l.source, l.created_at]));
+      const csv = rows.map((r) => r.map((c) => '"' + String(c || '').replace(/"/g, '""') + '"').join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'leads-marketing.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById('lead-refresh')?.addEventListener('click', () => loadLeads().catch((e)=>alert(e.message)));
+    document.getElementById('lead-search')?.addEventListener('input', applyFilter);
+    document.getElementById('lead-export')?.addEventListener('click', exportCsv);
+
+    loadLeads().catch((e) => alert(e.message));
+  </script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>
