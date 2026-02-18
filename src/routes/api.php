@@ -6,6 +6,7 @@ use App\Controllers\ServiceController;
 use App\Controllers\CareerController;
 use App\Controllers\ToolsController;
 use App\Controllers\SupportChatController;
+use App\Controllers\MarketingController;
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $method = $_SERVER['REQUEST_METHOD'];
@@ -226,6 +227,13 @@ if ($uri === '/api/notifications' && $method === 'GET') {
 // ROTAS DE FERRAMENTAS
 if ($uri === '/api/tools/track' && $method === 'POST') {
     ToolsController::track();
+    return;
+}
+
+
+// ROTAS DE MARKETING
+if ($uri === '/api/marketing/lead' && $method === 'POST') {
+    MarketingController::captureLead();
     return;
 }
 

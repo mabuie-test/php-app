@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Livre-se das Tarefas - Plataforma Acadêmica Profissional</title>
+  <meta name="description" content="Serviços acadêmicos profissionais: encomendas, revisão, formatação APA/ABNT, consultoria estatística, suporte em tempo real e ferramentas práticas para estudantes." />
+  <meta name="keywords" content="TCC, monografia, formatação APA, revisão acadêmica, consultoria estatística, serviços acadêmicos" />
+  <meta property="og:title" content="Livre-se das Tarefas - Plataforma Acadêmica Profissional" />
+  <meta property="og:description" content="Apoio acadêmico com atendimento em tempo real, ferramentas e acompanhamento completo." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://livresedastarefas.com" />
+  <link rel="canonical" href="https://livresedastarefas.com/" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -139,6 +146,76 @@
     .navbar .ghost:hover {
       border-color: var(--accent);
       color: var(--accent);
+    }
+
+
+    .lead-magnet-section,
+    .faq-section {
+      padding: 2.8rem 2rem;
+      background: var(--dark);
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .lead-magnet-wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 1.1fr 1fr;
+      align-items: stretch;
+    }
+
+    .lead-copy,
+    .lead-form-card,
+    .faq-list {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 1rem;
+    }
+
+    .lead-form-card form {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .lead-form-card input,
+    .lead-form-card select {
+      width: 100%;
+      background: rgba(11, 20, 38, 0.8);
+      color: var(--light);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+    }
+
+    .lead-form-card button {
+      border: none;
+      border-radius: 8px;
+      padding: 0.7rem 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+    }
+
+    .faq-list details {
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 0.75rem;
+      margin-bottom: 0.6rem;
+      background: rgba(11,20,38,0.45);
+    }
+
+    .faq-list summary {
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    #lead-feedback {
+      min-height: 1.1rem;
+      color: var(--accent);
+      font-size: 0.92rem;
     }
 
 
@@ -666,6 +743,12 @@
       border: 1px solid rgba(6, 214, 160, 0.3);
       font-size: 0.9rem;
     }
+
+    @media (max-width: 768px) {
+      .lead-magnet-wrap {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -865,6 +948,58 @@
     </div>
   </section>
 
+
+  <!-- LEAD MAGNET + CAPTURA -->
+  <section class="lead-magnet-section">
+    <h2 class="section-title fade-in">Checklist gratuito para acelerar seu TCC</h2>
+    <p class="section-subtitle fade-in">Baixe o checklist prático + receba dicas semanais com foco em produtividade acadêmica.</p>
+    <div class="lead-magnet-wrap">
+      <div class="lead-copy fade-in">
+        <h3>O que você recebe</h3>
+        <ul>
+          <li>Checklist de estrutura e cronograma de TCC</li>
+          <li>Guia rápido de revisão antes da entrega</li>
+          <li>Dicas de formatação e organização de referências</li>
+        </ul>
+        <p class="muted">Ideal para estudantes de licenciatura, pós e profissionais em formação.</p>
+      </div>
+      <div class="lead-form-card fade-in">
+        <form id="lead-magnet-form">
+          <input name="name" placeholder="Seu nome" required />
+          <input type="email" name="email" placeholder="Seu email" required />
+          <input name="phone" placeholder="Telefone (opcional)" />
+          <select name="interest">
+            <option value="lead_magnet_tcc">Checklist TCC</option>
+            <option value="formatacao_apa">Formatação APA</option>
+            <option value="consultoria_estatistica">Consultoria estatística</option>
+            <option value="revisao_linguistica">Revisão linguística</option>
+          </select>
+          <button type="submit">Baixar material gratuito</button>
+          <p id="lead-feedback" class="muted"></p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ SEO -->
+  <section class="faq-section">
+    <h2 class="section-title fade-in">Perguntas frequentes</h2>
+    <div class="faq-list" id="faq-list">
+      <details>
+        <summary>Vocês fazem formatação APA e ABNT?</summary>
+        <p>Sim. Oferecemos normalização e revisão de referências para APA, ABNT e outras normas acadêmicas.</p>
+      </details>
+      <details>
+        <summary>Consigo falar com suporte antes de contratar?</summary>
+        <p>Sim. O botão de chat fica disponível no canto inferior para atendimento e esclarecimento de dúvidas.</p>
+      </details>
+      <details>
+        <summary>Como funciona o acompanhamento da encomenda?</summary>
+        <p>Após o pedido, você recebe fatura e acompanha status no painel, incluindo documentos e atualizações.</p>
+      </details>
+    </div>
+  </section>
+
   <!-- OUTROS SERVIÇOS -->
   <section class="other-services">
     <h2 class="section-title fade-in">Mais Funcionalidades</h2>
@@ -925,6 +1060,45 @@
     </div>
   </footer>
   
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Livre-se das Tarefas",
+    "url": "https://livresedastarefas.com",
+    "contactPoint": [{
+      "@type": "ContactPoint",
+      "contactType": "customer support",
+      "telephone": "+258851619970",
+      "availableLanguage": ["Portuguese"]
+    }]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Vocês fazem formatação APA e ABNT?",
+        "acceptedAnswer": {"@type": "Answer", "text": "Sim. Oferecemos normalização e revisão de referências para APA, ABNT e outras normas acadêmicas."}
+      },
+      {
+        "@type": "Question",
+        "name": "Consigo falar com suporte antes de contratar?",
+        "acceptedAnswer": {"@type": "Answer", "text": "Sim. O botão de chat fica disponível no canto inferior para atendimento e esclarecimento de dúvidas."}
+      },
+      {
+        "@type": "Question",
+        "name": "Como funciona o acompanhamento da encomenda?",
+        "acceptedAnswer": {"@type": "Answer", "text": "Após o pedido, você recebe fatura e acompanha status no painel, incluindo documentos e atualizações."}
+      }
+    ]
+  }
+  </script>
+
   <script src="/main.js"></script>
   <script src="/chat-widget.js"></script>
   <script>
@@ -964,6 +1138,32 @@
         referralBanner.style.display = 'none';
       }
       
+
+      const leadForm = document.getElementById('lead-magnet-form');
+      if (leadForm) {
+        leadForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          const feedback = document.getElementById('lead-feedback');
+          const body = Object.fromEntries(new FormData(leadForm).entries());
+          body.source = 'home_lead_magnet';
+          if (feedback) feedback.textContent = 'A enviar...';
+          try {
+            const res = await fetch('/api/marketing/lead', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Falha ao registar lead');
+            if (feedback) feedback.textContent = 'Sucesso! Iniciando download...';
+            leadForm.reset();
+            if (data.next) window.open(data.next, '_blank');
+          } catch (err) {
+            if (feedback) feedback.textContent = err.message;
+          }
+        });
+      }
+
       // Animações ao scroll
       const observerOptions = {
         threshold: 0.1,
