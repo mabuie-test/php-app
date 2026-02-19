@@ -53,9 +53,14 @@ class User
         return $row ?: null;
     }
 
-    public static function listAll(): array
+    public static function listAll(bool $includeInactive = false): array
     {
-        $stmt = Database::pdo()->query('SELECT id, name, email, role, active, referral_code, referred_by, created_at FROM users ORDER BY id DESC');
+        $sql = 'SELECT id, name, email, role, active, referral_code, referred_by, created_at FROM users';
+        if (!$includeInactive) {
+            $sql .= ' WHERE active = 1';
+        }
+        $sql .= ' ORDER BY id DESC';
+        $stmt = Database::pdo()->query($sql);
         return $stmt->fetchAll();
     }
 
@@ -90,4 +95,47 @@ class User
         $stmt = Database::pdo()->prepare('UPDATE users SET active = :active WHERE id = :id');
         $stmt->execute([':active' => $active ? 1 : 0, ':id' => $id]);
     }
+
+
+    public static function dependencyCounts(int $id): array
+    {
+        $pdo = Database::pdo();
+        $counts = [
+            'orders' => 0,
+            'invoices' => 0,
+            'feedback' => 0,
+            'payouts' => 0,
+            'services' => 0,
+        ];
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM orders WHERE user_id = :id');
+        $stmt->execute([':id' => $id]);
+        $counts['orders'] = (int) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM invoices WHERE user_id = :id');
+        $stmt->execute([':id' => $id]);
+        $counts['invoices'] = (int) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM feedbacks WHERE user_id = :id');
+        $stmt->execute([':id' => $id]);
+        $counts['feedback'] = (int) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM affiliate_payouts WHERE user_id = :id');
+        $stmt->execute([':id' => $id]);
+        $counts['payouts'] = (int) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM service_requests WHERE user_id = :id');
+        $stmt->execute([':id' => $id]);
+        $counts['services'] = (int) $stmt->fetchColumn();
+
+        return $counts;
+    }
+
+    public static function anonymize(int $id): void
+    {
+        $safe = 'anon+' . $id . '@example.local';
+        $name = 'Utilizador Anonimizado #' . $id;
+        $stmt = Database::pdo()->prepare("UPDATE users SET name = :name, email = :email, active = 0, referred_by = NULL WHERE id = :id AND role != 'admin'");
+        $stmt->execute([':name' => $name, ':email' => $safe, ':id' => $id]);
+    }
+
 }

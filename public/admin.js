@@ -5,6 +5,38 @@ let revenueChart;
 let servicesChart;
 const adminPage = document.body.dataset.page || 'dashboard';
 
+
+function ensureUploadProgress(container, key = 'default') {
+  if (!container) return null;
+  let box = container.querySelector(`.upload-progress-wrap[data-key="${key}"]`);
+  if (!box) {
+    box = document.createElement('div');
+    box.className = 'upload-progress-wrap';
+    box.dataset.key = key;
+    box.innerHTML = '<div class="upload-progress-label">Progresso do upload</div><progress class="upload-progress" max="100" value="0"></progress><div class="upload-progress-value">0%</div>';
+    container.appendChild(box);
+  }
+  return box;
+}
+
+function uploadWithProgress(url, { headers = {}, formData, onProgress }) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    Object.entries(headers || {}).forEach(([k, v]) => xhr.setRequestHeader(k, v));
+    xhr.upload.onprogress = (evt) => {
+      if (evt.lengthComputable && onProgress) onProgress(Math.round((evt.loaded / evt.total) * 100));
+    };
+    xhr.onload = () => {
+      let data = {};
+      try { data = JSON.parse(xhr.responseText || '{}'); } catch (_) {}
+      resolve({ ok: xhr.status >= 200 && xhr.status < 300, data, status: xhr.status });
+    };
+    xhr.onerror = () => reject(new Error('Falha de rede no upload'));
+    xhr.send(formData);
+  });
+}
+
 function requireAdmin() {
   if (!authToken) {
     window.location.href = '/login.html';
@@ -138,7 +170,7 @@ async function loadOrders() {
       // Approve / Reject buttons (only if invoice exists AND order not already in a terminal paid/processed state)
       if (invoiceId) {
         // If invoice already paid, we still show the download and final upload controls, but hide approve/reject.
-        if (invoiceEstado !== 'PAGA') {
+        if (invoiceEstado === 'PENDENTE_VALIDACAO') {
           const approveBtn = document.createElement('button');
           approveBtn.className = 'primary';
           approveBtn.textContent = 'Marcar pago';
@@ -231,11 +263,16 @@ async function approveInvoice(invoiceId, number, email) {
 
 async function rejectInvoice(invoiceId, orderId) {
   if (!invoiceId) return;
-  const ok = await confirmAction('Deseja marcar o pagamento como rejeitado/pendente?');
+  const reason = prompt('Motivo da rejeição (obrigatório):');
+  if (!reason || !reason.trim()) {
+    return toast('Informe o motivo da rejeição.');
+  }
+  const ok = await confirmAction('Confirmar rejeição deste comprovativo?');
   if (!ok) return;
   const form = new FormData();
   form.set('invoice_id', invoiceId);
   form.set('order_id', orderId);
+  form.set('reason', reason.trim());
   const res = await fetch(`${apiBase}/admin/invoices/reject`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${authToken}` },
@@ -243,7 +280,7 @@ async function rejectInvoice(invoiceId, orderId) {
   });
   const data = await res.json();
   if (!res.ok) return toast(data.message || 'Erro ao rejeitar');
-  toast('Pagamento devolvido ao estado pendente.');
+  toast('Pagamento rejeitado.');
   await loadOrders();
   await loadMetrics();
 }
@@ -252,23 +289,35 @@ async function uploadFinal(orderId, input) {
   if (!input?.files?.length) return toast('Selecione um ficheiro primeiro');
   const ok = await confirmAction('Entregar este documento ao cliente?');
   if (!ok) return;
+  const triggerBtn = input.closest('.upload-zone')?.querySelector('button') || null;
+  if (triggerBtn) triggerBtn.disabled = true;
   const form = new FormData();
   form.set('order_id', orderId);
   form.append('final', input.files[0]);
-  const res = await fetch(`${apiBase}/admin/orders/final-upload`, {
-    method: 'POST',
+  const wrapper = input.closest('.upload-zone') || input.parentElement;
+  const progressBox = ensureUploadProgress(wrapper, `final-${orderId}`);
+  const bar = progressBox?.querySelector('progress');
+  const valueEl = progressBox?.querySelector('.upload-progress-value');
+  if (progressBox) progressBox.classList.add('visible');
+  const res = await uploadWithProgress(`${apiBase}/admin/orders/final-upload`, {
     headers: { Authorization: `Bearer ${authToken}` },
-    body: form,
+    formData: form,
+    onProgress: (pct) => {
+      if (bar) bar.value = pct;
+      if (valueEl) valueEl.textContent = `${pct}%`;
+    },
   });
-  const data = await res.json();
-  if (!res.ok) return toast(data.message || 'Erro ao enviar documento');
+  const data = res.data || {};
+  if (!res.ok) { if (triggerBtn) triggerBtn.disabled = false; return toast(data.message || 'Erro ao enviar documento'); }
   toast('Documento final submetido.');
   await loadOrders();
+  setTimeout(() => progressBox?.classList.remove('visible'), 1200);
+  if (triggerBtn) triggerBtn.disabled = false;
 }
 
 async function loadUsers() {
   if (!requireAdmin()) return;
-  const res = await fetch(`${apiBase}/admin/users`, { headers: { Authorization: `Bearer ${authToken}` } });
+  const res = await fetch(`${apiBase}/admin/users?include_inactive=1`, { headers: { Authorization: `Bearer ${authToken}` } });
   const data = await res.json();
   const list = document.getElementById('admin-users');
   if (!list) return;
@@ -286,19 +335,35 @@ async function loadUsers() {
     row.innerHTML = `
       <div>
         <strong>${user.name}</strong>
-        <p class="muted">${user.email} · ${user.role}</p>
+        <p class="muted">${user.email} · ${user.role} · ${user.active ? 'ativo' : 'inativo/oculto'}</p>
       </div>
       <div class="stacked-actions">
-        <button class="ghost" data-action="toggle">${user.active ? 'Desativar' : 'Ativar'}</button>
-        ${canDeleteUsers && !isAdmin ? '<button class="ghost" data-action="delete">Eliminar</button>' : ''}
+        <button class="ghost" data-action="toggle">${user.active ? 'Desativar + ocultar' : 'Ativar'}</button>
+        ${!isAdmin ? '<button class="ghost" data-action="anonymize">Anonimizar</button>' : ''}
+        ${canDeleteUsers && !isAdmin ? '<button class="ghost" data-action="delete">Eliminar definitivo</button>' : ''}
       </div>
     `;
 
     row.querySelector('[data-action="toggle"]').onclick = () => toggleUser(user.id, !user.active);
     const delBtn = row.querySelector('[data-action="delete"]');
     if (delBtn) delBtn.onclick = () => deleteUser(user.id, user.email);
+    const anonBtn = row.querySelector('[data-action="anonymize"]');
+    if (anonBtn) anonBtn.onclick = () => anonymizeUser(user.id, user.email);
     list.appendChild(row);
   });
+}
+
+
+async function anonymizeUser(userId, email) {
+  const ok = await confirmAction(`Anonimizar utilizador ${email}?`);
+  if (!ok) return;
+  const form = new FormData();
+  form.set('user_id', userId);
+  const res = await fetch(`${apiBase}/admin/users/anonymize`, { method: 'POST', headers: { Authorization: `Bearer ${authToken}` }, body: form });
+  const data = await res.json();
+  if (!res.ok) return toast(data.message || 'Erro ao anonimizar');
+  toast('Utilizador anonimizado');
+  loadUsers();
 }
 
 async function deleteUser(userId, email) {
@@ -588,18 +653,50 @@ async function sendAdminChat() {
   const msgInput = document.getElementById('chat-message');
   const fileInput = document.getElementById('chat-file');
   const orderInput = document.getElementById('chat-order');
+  const sendBtn = document.getElementById('chat-send');
   const form = new FormData();
   form.set('message', msgInput?.value || '');
   if (orderInput?.value) form.set('order_id', orderInput.value);
   if (fileInput?.files?.length) form.append('attachment', fileInput.files[0]);
-  const res = await fetch(`${apiBase}/admin/chat`, { method: 'POST', headers: { Authorization: `Bearer ${authToken}` }, body: form });
-  const data = await res.json();
-  if (!res.ok) return toast(data.message || 'Erro ao enviar nota');
-  toast('Nota registada');
-  if (msgInput) msgInput.value = '';
-  if (fileInput) fileInput.value = '';
-  loadAdminChat();
+
+  let progressBox = null;
+  try {
+    if (sendBtn) sendBtn.disabled = true;
+    let resData = {};
+    let okResp = true;
+    if (fileInput?.files?.length) {
+      progressBox = ensureUploadProgress(document.getElementById('chat-composer') || document.body, 'admin-chat-upload');
+      const bar = progressBox?.querySelector('progress');
+      const valueEl = progressBox?.querySelector('.upload-progress-value');
+      if (progressBox) progressBox.classList.add('visible');
+      const res = await uploadWithProgress(`${apiBase}/admin/chat`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+        formData: form,
+        onProgress: (pct) => {
+          if (bar) bar.value = pct;
+          if (valueEl) valueEl.textContent = `${pct}%`;
+        },
+      });
+      resData = res.data || {};
+      okResp = res.ok;
+    } else {
+      const res = await fetch(`${apiBase}/admin/chat`, { method: 'POST', headers: { Authorization: `Bearer ${authToken}` }, body: form });
+      resData = await res.json();
+      okResp = res.ok;
+    }
+    if (!okResp) return toast(resData.message || 'Erro ao enviar nota');
+    toast('Nota registada');
+    if (msgInput) msgInput.value = '';
+    if (fileInput) fileInput.value = '';
+    loadAdminChat();
+  } catch (err) {
+    toast(err.message || 'Erro ao enviar nota');
+  } finally {
+    setTimeout(() => progressBox?.classList.remove('visible'), 1200);
+    if (sendBtn) sendBtn.disabled = false;
+  }
 }
+
 
 const chatSend = document.getElementById('chat-send');
 if (chatSend) {

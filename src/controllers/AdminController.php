@@ -104,31 +104,48 @@ class AdminController
             AuditHelper::log((int) $order['user_id'], 'invoice:aprovada', ['invoice_id' => $invoiceId, 'order_id' => $order['id']]);
         }
 
-        AuditHelper::log($admin['id'], 'invoice:approve', ['invoice_id' => $invoiceId]);
+        AuditHelper::log($admin['id'], 'invoice:approve', ['invoice_id' => $invoiceId, 'at' => date('c')]);
         Response::json(['message' => 'Pagamento validado']);
     }
 
     /**
-     * Reject payment: set invoice to PENDENTE and order to PENDENTE_PAGAMENTO when applicable.
+     * Reject payment with mandatory reason.
      */
     public static function rejectPayment(): void
     {
         $admin = self::requireAdmin();
         $invoiceId = (int) ($_POST['invoice_id'] ?? 0);
-        Invoice::updateEstado($invoiceId, 'PENDENTE');
+        $reason = trim((string) ($_POST['reason'] ?? ''));
+        if ($invoiceId <= 0) {
+            Response::json(['message' => 'invoice_id obrigatório'], 400);
+            return;
+        }
+        if ($reason === '') {
+            Response::json(['message' => 'Motivo da rejeição é obrigatório'], 400);
+            return;
+        }
+
+        $invoice = Invoice::findById($invoiceId);
+        if (!$invoice) {
+            Response::json(['message' => 'Fatura não encontrada'], 404);
+            return;
+        }
+
+        Invoice::transitionState($invoiceId, 'REJEITADA', $reason);
         if (!empty($_POST['order_id'])) {
             Order::updateEstado((int) $_POST['order_id'], 'PENDENTE_PAGAMENTO');
         }
-        $order = !empty($_POST['order_id']) ? Order::findWithUser((int) $_POST['order_id']) : null;
-        if ($order) {
-            Mailer::send($order['user_email'], 'Pagamento rejeitado', 'O comprovativo da fatura #' . $invoiceId . ' foi rejeitado. Envie um novo ficheiro ou contacte o suporte.');
-            AuditHelper::log((int) $order['user_id'], 'invoice:rejeitada', ['invoice_id' => $invoiceId, 'order_id' => $order['id']]);
-        }
-        AuditHelper::log($admin['id'], 'invoice:reject', ['invoice_id' => $invoiceId]);
-        Response::json(['message' => 'Pagamento rejeitado']);
-    }
 
-// NO ARQUIVO src/controllers/AdminController.php, ADICIONE estes métodos:
+        $order = !empty($_POST['order_id']) ? Order::findWithUser((int) $_POST['order_id']) : Order::findWithUser((int) ($invoice['order_id'] ?? 0));
+        if ($order) {
+            $body = 'O comprovativo da fatura ' . ($invoice['numero'] ?? ('#' . $invoiceId)) . ' foi rejeitado. Motivo: ' . $reason;
+            Mailer::send($order['user_email'], 'Pagamento rejeitado', $body);
+            AuditHelper::log((int) $order['user_id'], 'invoice:rejeitada', ['invoice_id' => $invoiceId, 'order_id' => $order['id'], 'reason' => $reason]);
+        }
+
+        AuditHelper::log($admin['id'], 'invoice:reject', ['invoice_id' => $invoiceId, 'reason' => $reason, 'at' => date('c')]);
+        Response::json(['message' => 'Pagamento rejeitado', 'status' => 'REJEITADA']);
+    }
 
 /**
  * Listar comissões de afiliados (para admin-affiliates.html)
@@ -269,7 +286,7 @@ public static function payouts(): void
             Mailer::send($order['user_email'], 'Trabalho entregue', 'O documento final para a encomenda #' . $orderId . ' está disponível para download.');
             AuditHelper::log((int) $order['user_id'], 'order:entregue', ['order_id' => $orderId]);
         }
-        AuditHelper::log($admin['id'], 'order:deliver', ['order_id' => $orderId]);
+        AuditHelper::log($admin['id'], 'order:deliver', ['order_id' => $orderId, 'at' => date('c')]);
         Response::json(['message' => 'Documento final enviado']);
     }
 
@@ -336,7 +353,7 @@ public static function payouts(): void
         $admin = self::requireAdmin();
         $firstAdminId = User::firstAdminId();
         Response::json([
-            'users' => User::listAll(),
+            'users' => User::listAll((($_GET['include_inactive'] ?? '0') === '1')),
             'can_delete_users' => $firstAdminId !== null && (int) $admin['id'] === $firstAdminId,
             'first_admin_id' => $firstAdminId,
         ]);
@@ -384,9 +401,40 @@ public static function payouts(): void
             return;
         }
 
+        $deps = User::dependencyCounts($targetId);
+        $hasDeps = array_sum($deps) > 0;
+        if ($hasDeps) {
+            Response::json(['message' => 'Utilizador possui dependências; use desativar/ocultar ou anonimizar.', 'dependencies' => $deps], 409);
+            return;
+        }
+
         User::deleteNonAdmin($targetId);
         AuditHelper::log($admin['id'], 'user:delete', ['user_id' => $targetId, 'email' => $target['email'] ?? null]);
-        Response::json(['message' => 'Utilizador eliminado']);
+        Response::json(['message' => 'Utilizador eliminado definitivamente']);
+    }
+
+    public static function anonymizeUser(): void
+    {
+        $admin = self::requireAdmin();
+        $targetId = (int) ($_POST['user_id'] ?? 0);
+        if ($targetId <= 0) {
+            Response::json(['message' => 'user_id obrigatório'], 400);
+            return;
+        }
+
+        $target = User::findById($targetId);
+        if (!$target) {
+            Response::json(['message' => 'Utilizador não encontrado'], 404);
+            return;
+        }
+        if (($target['role'] ?? '') === 'admin') {
+            Response::json(['message' => 'Não é permitido anonimizar administradores'], 400);
+            return;
+        }
+
+        User::anonymize($targetId);
+        AuditHelper::log($admin['id'], 'user:anonymize', ['user_id' => $targetId]);
+        Response::json(['message' => 'Utilizador anonimizado e desativado']);
     }
 
     /**
@@ -570,6 +618,94 @@ public static function payouts(): void
             ],
             'sources' => $sources,
             'interests' => $interests,
+        ]);
+    }
+
+
+    public static function adminNotifications(): void
+    {
+        self::requireAdmin();
+        $rows = Audit::listRecent(100);
+        Response::json(['notifications' => array_map(function ($row) {
+            return [
+                'action' => $row['action'] ?? '',
+                'email' => $row['email'] ?? null,
+                'meta' => json_decode($row['meta'] ?? '[]', true),
+                'created_at' => $row['created_at'] ?? null,
+            ];
+        }, $rows)]);
+    }
+
+    public static function affiliateConversionReport(): void
+    {
+        self::requireAdmin();
+        $pdo = Database::pdo();
+        $sql = "SELECT u.referral_code,
+                       u.name,
+                       COALESCE(c.clicks,0) as clicks,
+                       COALESCE(o.orders,0) as orders,
+                       COALESCE(p.paid_orders,0) as paid_orders,
+                       COALESCE(p.paid_total,0) as paid_total
+                FROM users u
+                LEFT JOIN (
+                    SELECT JSON_UNQUOTE(JSON_EXTRACT(meta, '$.code')) as code, COUNT(*) as clicks
+                    FROM audits
+                    WHERE action='affiliate:click'
+                    GROUP BY JSON_UNQUOTE(JSON_EXTRACT(meta, '$.code'))
+                ) c ON c.code = u.referral_code
+                LEFT JOIN (
+                    SELECT referred_by_code as code, COUNT(*) as orders
+                    FROM orders
+                    WHERE referred_by_code IS NOT NULL AND referred_by_code != ''
+                    GROUP BY referred_by_code
+                ) o ON o.code = u.referral_code
+                LEFT JOIN (
+                    SELECT ord.referred_by_code as code, COUNT(*) as paid_orders, COALESCE(SUM(inv.valor_total),0) as paid_total
+                    FROM orders ord
+                    INNER JOIN invoices inv ON inv.order_id = ord.id AND inv.estado = 'PAGA'
+                    WHERE ord.referred_by_code IS NOT NULL AND ord.referred_by_code != ''
+                    GROUP BY ord.referred_by_code
+                ) p ON p.code = u.referral_code
+                WHERE u.referral_code IS NOT NULL AND u.referral_code != ''
+                ORDER BY paid_total DESC, clicks DESC";
+        $rows = $pdo->query($sql)->fetchAll(\PDO::FETCH_ASSOC);
+
+        if (($_GET['format'] ?? '') === 'csv') {
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="affiliate-conversion.csv"');
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['referral_code', 'name', 'clicks', 'orders', 'paid_orders', 'paid_total']);
+            foreach ($rows as $r) {
+                fputcsv($out, [$r['referral_code'], $r['name'], $r['clicks'], $r['orders'], $r['paid_orders'], $r['paid_total']]);
+            }
+            fclose($out);
+            return;
+        }
+
+        Response::json(['report' => $rows]);
+    }
+
+    public static function slaDashboard(): void
+    {
+        self::requireAdmin();
+        $pdo = Database::pdo();
+        $sql = "SELECT AVG(TIMESTAMPDIFF(MINUTE, a1.created_at, a2.created_at)) as avg_minutes
+                FROM audits a1
+                JOIN audits a2 ON JSON_UNQUOTE(JSON_EXTRACT(a1.meta, '$.invoice_id')) = JSON_UNQUOTE(JSON_EXTRACT(a2.meta, '$.invoice_id'))
+                WHERE a1.action='invoice:proof' AND a2.action='invoice:approve'";
+        $proofToApprove = (float) $pdo->query($sql)->fetchColumn();
+
+        $deliverSql = "SELECT AVG(TIMESTAMPDIFF(HOUR, inv.created_at, ord.updated_at))
+                       FROM invoices inv
+                       JOIN orders ord ON ord.id = inv.order_id
+                       WHERE ord.final_file IS NOT NULL";
+        $invoiceToDelivery = (float) $pdo->query($deliverSql)->fetchColumn();
+
+        Response::json([
+            'sla' => [
+                'avg_minutes_proof_to_approve' => round($proofToApprove, 2),
+                'avg_hours_invoice_to_delivery' => round($invoiceToDelivery, 2),
+            ]
         ]);
     }
 
