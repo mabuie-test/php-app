@@ -5,6 +5,38 @@ let revenueChart;
 let servicesChart;
 const adminPage = document.body.dataset.page || 'dashboard';
 
+
+function ensureUploadProgress(container, key = 'default') {
+  if (!container) return null;
+  let box = container.querySelector(`.upload-progress-wrap[data-key="${key}"]`);
+  if (!box) {
+    box = document.createElement('div');
+    box.className = 'upload-progress-wrap';
+    box.dataset.key = key;
+    box.innerHTML = '<div class="upload-progress-label">Progresso do upload</div><progress class="upload-progress" max="100" value="0"></progress><div class="upload-progress-value">0%</div>';
+    container.appendChild(box);
+  }
+  return box;
+}
+
+function uploadWithProgress(url, { headers = {}, formData, onProgress }) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    Object.entries(headers || {}).forEach(([k, v]) => xhr.setRequestHeader(k, v));
+    xhr.upload.onprogress = (evt) => {
+      if (evt.lengthComputable && onProgress) onProgress(Math.round((evt.loaded / evt.total) * 100));
+    };
+    xhr.onload = () => {
+      let data = {};
+      try { data = JSON.parse(xhr.responseText || '{}'); } catch (_) {}
+      resolve({ ok: xhr.status >= 200 && xhr.status < 300, data, status: xhr.status });
+    };
+    xhr.onerror = () => reject(new Error('Falha de rede no upload'));
+    xhr.send(formData);
+  });
+}
+
 function requireAdmin() {
   if (!authToken) {
     window.location.href = '/login.html';
@@ -260,15 +292,24 @@ async function uploadFinal(orderId, input) {
   const form = new FormData();
   form.set('order_id', orderId);
   form.append('final', input.files[0]);
-  const res = await fetch(`${apiBase}/admin/orders/final-upload`, {
-    method: 'POST',
+  const wrapper = input.closest('.upload-zone') || input.parentElement;
+  const progressBox = ensureUploadProgress(wrapper, `final-${orderId}`);
+  const bar = progressBox?.querySelector('progress');
+  const valueEl = progressBox?.querySelector('.upload-progress-value');
+  if (progressBox) progressBox.classList.add('visible');
+  const res = await uploadWithProgress(`${apiBase}/admin/orders/final-upload`, {
     headers: { Authorization: `Bearer ${authToken}` },
-    body: form,
+    formData: form,
+    onProgress: (pct) => {
+      if (bar) bar.value = pct;
+      if (valueEl) valueEl.textContent = `${pct}%`;
+    },
   });
-  const data = await res.json();
+  const data = res.data || {};
   if (!res.ok) return toast(data.message || 'Erro ao enviar documento');
   toast('Documento final submetido.');
   await loadOrders();
+  setTimeout(() => progressBox?.classList.remove('visible'), 1200);
 }
 
 async function loadUsers() {
@@ -613,9 +654,30 @@ async function sendAdminChat() {
   form.set('message', msgInput?.value || '');
   if (orderInput?.value) form.set('order_id', orderInput.value);
   if (fileInput?.files?.length) form.append('attachment', fileInput.files[0]);
-  const res = await fetch(`${apiBase}/admin/chat`, { method: 'POST', headers: { Authorization: `Bearer ${authToken}` }, body: form });
-  const data = await res.json();
-  if (!res.ok) return toast(data.message || 'Erro ao enviar nota');
+  let resData = {};
+  let okResp = true;
+  if (fileInput?.files?.length) {
+    const progressBox = ensureUploadProgress(document.getElementById('chat-composer') || document.body, 'admin-chat-upload');
+    const bar = progressBox?.querySelector('progress');
+    const valueEl = progressBox?.querySelector('.upload-progress-value');
+    if (progressBox) progressBox.classList.add('visible');
+    const res = await uploadWithProgress(`${apiBase}/admin/chat`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+      formData: form,
+      onProgress: (pct) => {
+        if (bar) bar.value = pct;
+        if (valueEl) valueEl.textContent = `${pct}%`;
+      },
+    });
+    resData = res.data || {};
+    okResp = res.ok;
+    setTimeout(() => progressBox?.classList.remove('visible'), 1200);
+  } else {
+    const res = await fetch(`${apiBase}/admin/chat`, { method: 'POST', headers: { Authorization: `Bearer ${authToken}` }, body: form });
+    resData = await res.json();
+    okResp = res.ok;
+  }
+  if (!okResp) return toast(resData.message || 'Erro ao enviar nota');
   toast('Nota registada');
   if (msgInput) msgInput.value = '';
   if (fileInput) fileInput.value = '';

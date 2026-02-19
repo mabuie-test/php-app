@@ -3,6 +3,38 @@ let authToken = localStorage.getItem('token') || '';
 const params = new URLSearchParams(window.location.search);
 const orderId = params.get('id');
 
+function ensureProgressBox(formEl, key = 'proof') {
+  if (!formEl) return null;
+  let box = formEl.querySelector(`.upload-progress-wrap[data-key="${key}"]`);
+  if (!box) {
+    box = document.createElement('div');
+    box.className = 'upload-progress-wrap';
+    box.dataset.key = key;
+    box.innerHTML = '<div class="upload-progress-label">Progresso do upload</div><progress class="upload-progress" max="100" value="0"></progress><div class="upload-progress-value">0%</div>';
+    formEl.appendChild(box);
+  }
+  return box;
+}
+
+function uploadWithProgress(url, { headers = {}, formData, onProgress }) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    Object.entries(headers || {}).forEach(([k, v]) => xhr.setRequestHeader(k, v));
+    xhr.upload.onprogress = (evt) => {
+      if (evt.lengthComputable && onProgress) onProgress(Math.round((evt.loaded / evt.total) * 100));
+    };
+    xhr.onload = () => {
+      let data = {};
+      try { data = JSON.parse(xhr.responseText || '{}'); } catch (_) {}
+      resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, data });
+    };
+    xhr.onerror = () => reject(new Error('Falha de rede no upload'));
+    xhr.send(formData);
+  });
+}
+
+
 function requireAuth() {
   if (!authToken) {
     window.location.href = '/login.html';
@@ -89,14 +121,28 @@ if (proofForm) {
     if (fileField?.files?.length) {
       form.append('comprovativo', fileField.files[0]);
     }
+    const progressBox = ensureProgressBox(proofForm, 'proof-upload');
+    const progress = progressBox?.querySelector('progress');
+    const progressValue = progressBox?.querySelector('.upload-progress-value');
     try {
-      const res = await fetch(`${apiBase}/orders/proof`, { method: 'POST', headers: { Authorization: `Bearer ${authToken}` }, body: form });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Falha ao enviar comprovativo');
+      if (progressBox) progressBox.classList.add('visible');
+      if (progress) progress.value = 0;
+      if (progressValue) progressValue.textContent = '0%';
+      const res = await uploadWithProgress(`${apiBase}/orders/proof`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+        formData: form,
+        onProgress: (pct) => {
+          if (progress) progress.value = pct;
+          if (progressValue) progressValue.textContent = `${pct}%`;
+        },
+      });
+      if (!res.ok) throw new Error(res.data.message || 'Falha ao enviar comprovativo');
       alert('Comprovativo enviado com sucesso.');
       loadInvoice();
     } catch (err) {
       alert(err.message);
+    } finally {
+      setTimeout(() => progressBox?.classList.remove('visible'), 1200);
     }
   });
 }

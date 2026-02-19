@@ -44,6 +44,37 @@ function nl2br(s) { return String(s).replace(/\n/g, '<br/>'); }
 function safeSetText(elm, text) { if (!elm) return; try { elm.textContent = text; } catch (e) { console.warn('safeSetText failed', e); } }
 function safeSetHTML(elm, html) { if (!elm) return; try { elm.innerHTML = html; } catch (e) { console.warn('safeSetHTML failed', e); } }
 
+
+function ensureUploadProgress(container, key = 'chat') {
+  if (!container) return null;
+  let box = container.querySelector(`.upload-progress-wrap[data-key="${key}"]`);
+  if (!box) {
+    box = el('div', 'upload-progress-wrap', '<div class="upload-progress-label">Progresso do upload</div><progress class="upload-progress" max="100" value="0"></progress><div class="upload-progress-value">0%</div>');
+    box.dataset.key = key;
+    container.appendChild(box);
+  }
+  return box;
+}
+
+function uploadWithProgress(url, { headers = {}, formData, onProgress }) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    Object.entries(headers || {}).forEach(([k, v]) => xhr.setRequestHeader(k, v));
+    xhr.upload.onprogress = (evt) => {
+      if (evt.lengthComputable && onProgress) onProgress(Math.round((evt.loaded / evt.total) * 100));
+    };
+    xhr.onload = () => {
+      let data = {};
+      try { data = JSON.parse(xhr.responseText || '{}'); } catch (_) {}
+      resolve({ ok: xhr.status >= 200 && xhr.status < 300, data, status: xhr.status });
+    };
+    xhr.onerror = () => reject(new Error('Falha de rede no upload'));
+    xhr.send(formData);
+  });
+}
+
+
 /* --------------------------- File preview UI ------------------------- */
 (function initFilePreview() {
   const fileInput = q('chat-file');
@@ -174,17 +205,35 @@ function safeSetHTML(elm, html) { if (!elm) return; try { elm.innerHTML = html; 
       if (assoc) form.set('order_id', assoc);
       if (fInput && fInput.files && fInput.files.length) form.append('attachment', fInput.files[0]);
 
-      const res = await fetch(`${CHAT_API_BASE}/admin/chat`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: form,
-      });
+      const hasFile = !!(fInput && fInput.files && fInput.files.length);
+      let response;
+      if (hasFile) {
+        const progressBox = ensureUploadProgress(q('chat-composer') || document.body, 'chat-upload');
+        const bar = progressBox?.querySelector('progress');
+        const valueEl = progressBox?.querySelector('.upload-progress-value');
+        if (progressBox) progressBox.classList.add('visible');
+        response = await uploadWithProgress(`${CHAT_API_BASE}/admin/chat`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          formData: form,
+          onProgress: (pct) => {
+            if (bar) bar.value = pct;
+            if (valueEl) valueEl.textContent = `${pct}%`;
+          },
+        });
+        setTimeout(() => progressBox?.classList.remove('visible'), 1200);
+      } else {
+        const res = await fetch(`${CHAT_API_BASE}/admin/chat`, {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: form,
+        });
+        let data = {};
+        try { data = await res.json(); } catch (_) { /* ignore non-json */ }
+        response = { ok: res.ok, data };
+      }
 
-      let data = {};
-      try { data = await res.json(); } catch (_) { /* ignore non-json */ }
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Erro ao enviar nota');
+      if (!response.ok) {
+        throw new Error(response.data.message || 'Erro ao enviar nota');
       }
 
       // success: clear composer and preview

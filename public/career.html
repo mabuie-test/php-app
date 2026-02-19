@@ -130,6 +130,34 @@
                 btn.textContent = disable ? '⏳ Enviando...' : text;
             }
 
+
+            function ensureUploadProgress(formEl, key = 'career') {
+                if (!formEl) return null;
+                let box = formEl.querySelector(`.upload-progress-wrap[data-key="${key}"]`);
+                if (!box) {
+                    box = document.createElement('div');
+                    box.className = 'upload-progress-wrap';
+                    box.dataset.key = key;
+                    box.innerHTML = '<div class="upload-progress-label">Progresso do upload</div><progress class="upload-progress" max="100" value="0"></progress><div class="upload-progress-value">0%</div>';
+                    formEl.appendChild(box);
+                }
+                return box;
+            }
+
+            function uploadWithProgress(url, token, formData, onProgress) {
+                return new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', url, true);
+                    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                    xhr.upload.onprogress = (evt) => {
+                        if (evt.lengthComputable && onProgress) onProgress(Math.round((evt.loaded / evt.total) * 100));
+                    };
+                    xhr.onload = () => resolve({ status: xhr.status, ok: xhr.status >= 200 && xhr.status < 300, text: xhr.responseText || '' });
+                    xhr.onerror = () => reject(new Error('Falha de rede no upload'));
+                    xhr.send(formData);
+                });
+            }
+
             // ---------- VERIFICAÇÃO DE AUTENTICAÇÃO ----------
             function isAuthenticated() {
                 return token && token !== 'null' && token !== 'undefined' && token.length > 10;
@@ -163,13 +191,17 @@
                     }
 
                     // 2. Requisição
-                    const response = await fetch(`${apiBase}/career/order`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}` },
-                        body: formData
+                    const progressBox = ensureUploadProgress(formEl, serviceType || 'career-upload');
+                    const bar = progressBox?.querySelector('progress');
+                    const valueEl = progressBox?.querySelector('.upload-progress-value');
+                    if (progressBox) progressBox.classList.add('visible');
+
+                    const response = await uploadWithProgress(`${apiBase}/career/order`, token, formData, (pct) => {
+                        if (bar) bar.value = pct;
+                        if (valueEl) valueEl.textContent = `${pct}%`;
                     });
 
-                    const responseText = await response.text();
+                    const responseText = response.text;
                     let json;
                     try {
                         json = JSON.parse(responseText);
@@ -197,6 +229,7 @@
                     console.error('Submit error:', error);
                 } finally {
                     disableButton(submitBtn, false, originalText);
+                    setTimeout(() => formEl.querySelector('.upload-progress-wrap.visible')?.classList.remove('visible'), 1200);
                 }
             }
 

@@ -68,6 +68,38 @@ function showToast(text) {
   }
 }
 
+
+function ensureUploadProgress(container, key = 'default') {
+  if (!container) return null;
+  let box = container.querySelector(`.upload-progress-wrap[data-key="${key}"]`);
+  if (!box) {
+    box = document.createElement('div');
+    box.className = 'upload-progress-wrap';
+    box.dataset.key = key;
+    box.innerHTML = '<div class="upload-progress-label">Progresso do upload</div><progress class="upload-progress" max="100" value="0"></progress><div class="upload-progress-value">0%</div>';
+    container.appendChild(box);
+  }
+  return box;
+}
+
+function uploadWithProgress(url, { headers = {}, formData, onProgress }) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    Object.entries(headers || {}).forEach(([k, v]) => xhr.setRequestHeader(k, v));
+    xhr.upload.onprogress = (evt) => {
+      if (evt.lengthComputable && onProgress) onProgress(Math.round((evt.loaded / evt.total) * 100));
+    };
+    xhr.onload = () => {
+      let data = {};
+      try { data = JSON.parse(xhr.responseText || '{}'); } catch (_) {}
+      resolve({ ok: xhr.status >= 200 && xhr.status < 300, data, status: xhr.status });
+    };
+    xhr.onerror = () => reject(new Error('Falha de rede no upload'));
+    xhr.send(formData);
+  });
+}
+
 function requireAuth() {
   if (!authToken) {
     window.location.href = '/login.html';
@@ -126,13 +158,22 @@ if (orderForm) {
         Array.from(materialsField.files).forEach((file) => payload.append('materiais_uploads[]', file));
       }
     }
+    const progressBox = ensureUploadProgress(orderForm, 'order-upload');
+    const bar = progressBox?.querySelector('progress');
+    const valueEl = progressBox?.querySelector('.upload-progress-value');
     try {
-      const res = await fetch(`${apiBase}/orders`, {
-        method: 'POST',
+      if (progressBox) progressBox.classList.add('visible');
+      if (bar) bar.value = 0;
+      if (valueEl) valueEl.textContent = '0%';
+      const res = await uploadWithProgress(`${apiBase}/orders`, {
         headers: { Authorization: `Bearer ${authToken}` },
-        body: payload,
+        formData: payload,
+        onProgress: (pct) => {
+          if (bar) bar.value = pct;
+          if (valueEl) valueEl.textContent = `${pct}%`;
+        },
       });
-      const data = await res.json();
+      const data = res.data || {};
       if (!res.ok) throw new Error(data.message || 'Erro ao criar encomenda');
       orderForm.reset();
       showToast('Encomenda criada e fatura emitida.');
@@ -141,6 +182,8 @@ if (orderForm) {
       }, 300);
     } catch (err) {
       showToast(err.message);
+    } finally {
+      setTimeout(() => progressBox?.classList.remove('visible'), 1200);
     }
   });
 }
@@ -333,10 +376,31 @@ if (serviceForm) {
     if (serviceForm.querySelector('input[name="attachment"]')?.files?.length) {
       payload.append('attachment', serviceForm.querySelector('input[name="attachment"]').files[0]);
     }
+    const progressBox = ensureUploadProgress(serviceForm, 'service-upload');
+    const bar = progressBox?.querySelector('progress');
+    const valueEl = progressBox?.querySelector('.upload-progress-value');
     try {
-      const res = await fetch(`${apiBase}/services`, { method: 'POST', headers: { Authorization: `Bearer ${authToken}` }, body: payload });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Erro ao registar serviço');
+      if (progressBox) progressBox.classList.add('visible');
+      const hasAttachment = !!serviceForm.querySelector('input[name="attachment"]')?.files?.length;
+      let data;
+      let okUpload = true;
+      if (hasAttachment) {
+        const res = await uploadWithProgress(`${apiBase}/services`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+          formData: payload,
+          onProgress: (pct) => {
+            if (bar) bar.value = pct;
+            if (valueEl) valueEl.textContent = `${pct}%`;
+          },
+        });
+        data = res.data || {};
+        okUpload = res.ok;
+      } else {
+        const res = await fetch(`${apiBase}/services`, { method: 'POST', headers: { Authorization: `Bearer ${authToken}` }, body: payload });
+        data = await res.json();
+        okUpload = res.ok;
+      }
+      if (!okUpload) throw new Error(data.message || 'Erro ao registar serviço');
       showToast('Pedido especializado enviado.');
       serviceForm.reset();
       loadMyServices();
