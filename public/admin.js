@@ -135,10 +135,10 @@ async function loadOrders() {
       // actions container
       const actions = card.querySelector('.stacked-actions');
 
-      // Approve / Reject buttons (only if invoice exists AND order not already in a terminal paid/processed state)
+      // Approve / Reject buttons only for payment states still actionable by admin
       if (invoiceId) {
-        // If invoice already paid, we still show the download and final upload controls, but hide approve/reject.
-        if (invoiceEstado !== 'PAGA') {
+        const canValidatePayment = ['EMITIDA', 'PENDENTE', 'PENDENTE_VALIDACAO'].includes(invoiceEstado);
+        if (canValidatePayment) {
           const approveBtn = document.createElement('button');
           approveBtn.className = 'primary';
           approveBtn.textContent = 'Marcar pago';
@@ -243,7 +243,7 @@ async function rejectInvoice(invoiceId, orderId) {
   });
   const data = await res.json();
   if (!res.ok) return toast(data.message || 'Erro ao rejeitar');
-  toast('Pagamento devolvido ao estado pendente.');
+  toast('Pagamento marcado como rejeitado.');
   await loadOrders();
   await loadMetrics();
 }
@@ -286,10 +286,15 @@ async function loadUsers() {
         <p class="muted">${user.email} · ${user.role}</p>
       </div>
       <div class="stacked-actions">
-        <button class="ghost" data-id="${user.id}" data-active="${user.active ? '1' : '0'}">${user.active ? 'Desativar' : 'Ativar'}</button>
+        <button class="ghost" data-action="toggle" data-id="${user.id}" data-active="${user.active ? '1' : '0'}">${user.active ? 'Desativar' : 'Ativar'}</button>
+        ${user.role !== 'admin' ? `<button class="ghost" data-action="delete" data-id="${user.id}">Eliminar</button>` : ''}
       </div>
     `;
-    row.querySelector('button').onclick = () => toggleUser(user.id, !user.active);
+    const toggleBtn = row.querySelector('button[data-action="toggle"]');
+    if (toggleBtn) toggleBtn.onclick = () => toggleUser(user.id, !user.active);
+
+    const deleteBtn = row.querySelector('button[data-action="delete"]');
+    if (deleteBtn) deleteBtn.onclick = () => deleteUser(user.id);
     list.appendChild(row);
   });
 }
@@ -302,6 +307,23 @@ async function toggleUser(userId, active) {
   const data = await res.json();
   if (!res.ok) return toast(data.message || 'Erro a atualizar utilizador');
   toast('Utilizador atualizado');
+  loadUsers();
+}
+
+async function deleteUser(userId) {
+  const ok = await confirmAction('Tem a certeza que deseja eliminar este utilizador?');
+  if (!ok) return;
+
+  const form = new FormData();
+  form.set('user_id', userId);
+  const res = await fetch(`${apiBase}/admin/users/delete`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${authToken}` },
+    body: form,
+  });
+  const data = await res.json();
+  if (!res.ok) return toast(data.message || 'Erro ao eliminar utilizador');
+  toast('Utilizador eliminado');
   loadUsers();
 }
 

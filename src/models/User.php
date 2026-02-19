@@ -76,4 +76,16 @@ class User
         $stmt = Database::pdo()->prepare('UPDATE users SET active = :active WHERE id = :id');
         $stmt->execute([':active' => $active ? 1 : 0, ':id' => $id]);
     }
+
+    public static function deleteById(int $id): bool
+    {
+        try {
+            $stmt = Database::pdo()->prepare("DELETE FROM users WHERE id = :id AND role != 'admin'");
+            $stmt->execute([':id' => $id]);
+            return $stmt->rowCount() > 0;
+        } catch (\Throwable $e) {
+            error_log('User::deleteById error: ' . $e->getMessage());
+            return false;
+        }
+    }
 }

@@ -109,13 +109,13 @@ class AdminController
     }
 
     /**
-     * Reject payment: set invoice to PENDENTE and order to PENDENTE_PAGAMENTO when applicable.
+     * Reject payment: set invoice to REJEITADA and order to PENDENTE_PAGAMENTO when applicable.
      */
     public static function rejectPayment(): void
     {
         $admin = self::requireAdmin();
         $invoiceId = (int) ($_POST['invoice_id'] ?? 0);
-        Invoice::updateEstado($invoiceId, 'PENDENTE');
+        Invoice::updateEstado($invoiceId, 'REJEITADA');
         if (!empty($_POST['order_id'])) {
             Order::updateEstado((int) $_POST['order_id'], 'PENDENTE_PAGAMENTO');
         }
@@ -352,6 +352,41 @@ public static function payouts(): void
         // Optionally: when deactivating, invalidate tokens / sessions (requires session store).
         // For now, ensure login checks active status (AuthController should be adjusted accordingly).
         Response::json(['message' => 'Estado atualizado']);
+    }
+
+    public static function deleteUser(): void
+    {
+        $admin = self::requireAdmin();
+        $userId = (int) ($_POST['user_id'] ?? 0);
+
+        if ($userId <= 0) {
+            Response::json(['message' => 'Utilizador inválido'], 400);
+            return;
+        }
+
+        if ((int) $admin['id'] === $userId) {
+            Response::json(['message' => 'Não pode eliminar a própria conta de admin'], 400);
+            return;
+        }
+
+        $user = User::findById($userId);
+        if (!$user) {
+            Response::json(['message' => 'Utilizador não encontrado'], 404);
+            return;
+        }
+
+        if (($user['role'] ?? '') === 'admin') {
+            Response::json(['message' => 'Não é permitido eliminar outro administrador'], 400);
+            return;
+        }
+
+        if (!User::deleteById($userId)) {
+            Response::json(['message' => 'Não foi possível eliminar este utilizador. Desative-o ou remova dependências primeiro.'], 409);
+            return;
+        }
+
+        AuditHelper::log($admin['id'], 'user:delete', ['user_id' => $userId]);
+        Response::json(['message' => 'Utilizador eliminado']);
     }
 
     /**
