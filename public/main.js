@@ -134,6 +134,8 @@ if (orderForm) {
     if (!requireAuth()) return;
     const ok = await confirmAction('Confirmar envio desta encomenda?');
     if (!ok) return;
+    const submitBtn = orderForm.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
     const raw = new FormData(orderForm);
     const payload = new FormData();
     payload.set('tipo', raw.get('workType'));
@@ -184,6 +186,7 @@ if (orderForm) {
       showToast(err.message);
     } finally {
       setTimeout(() => progressBox?.classList.remove('visible'), 1200);
+      if (submitBtn) submitBtn.disabled = false;
     }
   });
 }
@@ -213,6 +216,9 @@ if (quoteBtn) {
       }
     } catch (err) {
       showToast(err.message);
+    } finally {
+      setTimeout(() => progressBox?.classList.remove('visible'), 1200);
+      if (submitBtn) submitBtn.disabled = false;
     }
   });
 }
@@ -368,6 +374,8 @@ if (serviceForm) {
     if (!requireAuth()) return;
     const ok = await confirmAction('Submeter este pedido especializado?');
     if (!ok) return;
+    const submitBtn = serviceForm.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
     const raw = new FormData(serviceForm);
     const payload = new FormData();
     ['categoria', 'contact_name', 'contact_email', 'contact_phone', 'detalhes', 'norma_preferida', 'software_preferido'].forEach((f) => {
@@ -406,6 +414,9 @@ if (serviceForm) {
       loadMyServices();
     } catch (err) {
       showToast(err.message);
+    } finally {
+      setTimeout(() => progressBox?.classList.remove('visible'), 1200);
+      if (submitBtn) submitBtn.disabled = false;
     }
   });
 }

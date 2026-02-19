@@ -197,6 +197,7 @@ function uploadWithProgress(url, { headers = {}, formData, onProgress }) {
       return;
     }
 
+    let progressBox = null;
     try {
       if (btn) { btn.disabled = true; safeSetText(btn, 'Enviando...'); }
 
@@ -208,7 +209,7 @@ function uploadWithProgress(url, { headers = {}, formData, onProgress }) {
       const hasFile = !!(fInput && fInput.files && fInput.files.length);
       let response;
       if (hasFile) {
-        const progressBox = ensureUploadProgress(q('chat-composer') || document.body, 'chat-upload');
+        progressBox = ensureUploadProgress(q('chat-composer') || document.body, 'chat-upload');
         const bar = progressBox?.querySelector('progress');
         const valueEl = progressBox?.querySelector('.upload-progress-value');
         if (progressBox) progressBox.classList.add('visible');
@@ -220,7 +221,6 @@ function uploadWithProgress(url, { headers = {}, formData, onProgress }) {
             if (valueEl) valueEl.textContent = `${pct}%`;
           },
         });
-        setTimeout(() => progressBox?.classList.remove('visible'), 1200);
       } else {
         const res = await fetch(`${CHAT_API_BASE}/admin/chat`, {
           method: 'POST',
@@ -246,6 +246,7 @@ function uploadWithProgress(url, { headers = {}, formData, onProgress }) {
       alert(err.message || 'Falha ao enviar');
       console.error('send message error', err);
     } finally {
+      setTimeout(() => progressBox?.classList.remove('visible'), 1200);
       if (btn) { btn.disabled = false; safeSetText(btn, 'Enviar'); }
     }
   });

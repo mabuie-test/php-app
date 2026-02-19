@@ -653,40 +653,50 @@ async function sendAdminChat() {
   const msgInput = document.getElementById('chat-message');
   const fileInput = document.getElementById('chat-file');
   const orderInput = document.getElementById('chat-order');
+  const sendBtn = document.getElementById('chat-send');
   const form = new FormData();
   form.set('message', msgInput?.value || '');
   if (orderInput?.value) form.set('order_id', orderInput.value);
   if (fileInput?.files?.length) form.append('attachment', fileInput.files[0]);
-  let resData = {};
-  let okResp = true;
-  if (fileInput?.files?.length) {
-    const progressBox = ensureUploadProgress(document.getElementById('chat-composer') || document.body, 'admin-chat-upload');
-    const bar = progressBox?.querySelector('progress');
-    const valueEl = progressBox?.querySelector('.upload-progress-value');
-    if (progressBox) progressBox.classList.add('visible');
-    const res = await uploadWithProgress(`${apiBase}/admin/chat`, {
-      headers: { Authorization: `Bearer ${authToken}` },
-      formData: form,
-      onProgress: (pct) => {
-        if (bar) bar.value = pct;
-        if (valueEl) valueEl.textContent = `${pct}%`;
-      },
-    });
-    resData = res.data || {};
-    okResp = res.ok;
+
+  let progressBox = null;
+  try {
+    if (sendBtn) sendBtn.disabled = true;
+    let resData = {};
+    let okResp = true;
+    if (fileInput?.files?.length) {
+      progressBox = ensureUploadProgress(document.getElementById('chat-composer') || document.body, 'admin-chat-upload');
+      const bar = progressBox?.querySelector('progress');
+      const valueEl = progressBox?.querySelector('.upload-progress-value');
+      if (progressBox) progressBox.classList.add('visible');
+      const res = await uploadWithProgress(`${apiBase}/admin/chat`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+        formData: form,
+        onProgress: (pct) => {
+          if (bar) bar.value = pct;
+          if (valueEl) valueEl.textContent = `${pct}%`;
+        },
+      });
+      resData = res.data || {};
+      okResp = res.ok;
+    } else {
+      const res = await fetch(`${apiBase}/admin/chat`, { method: 'POST', headers: { Authorization: `Bearer ${authToken}` }, body: form });
+      resData = await res.json();
+      okResp = res.ok;
+    }
+    if (!okResp) return toast(resData.message || 'Erro ao enviar nota');
+    toast('Nota registada');
+    if (msgInput) msgInput.value = '';
+    if (fileInput) fileInput.value = '';
+    loadAdminChat();
+  } catch (err) {
+    toast(err.message || 'Erro ao enviar nota');
+  } finally {
     setTimeout(() => progressBox?.classList.remove('visible'), 1200);
-  if (triggerBtn) triggerBtn.disabled = false;
-  } else {
-    const res = await fetch(`${apiBase}/admin/chat`, { method: 'POST', headers: { Authorization: `Bearer ${authToken}` }, body: form });
-    resData = await res.json();
-    okResp = res.ok;
+    if (sendBtn) sendBtn.disabled = false;
   }
-  if (!okResp) return toast(resData.message || 'Erro ao enviar nota');
-  toast('Nota registada');
-  if (msgInput) msgInput.value = '';
-  if (fileInput) fileInput.value = '';
-  loadAdminChat();
 }
+
 
 const chatSend = document.getElementById('chat-send');
 if (chatSend) {
