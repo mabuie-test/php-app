@@ -71,6 +71,20 @@ class User
         $stmt->execute([':hash' => password_hash($password, PASSWORD_BCRYPT), ':id' => $id]);
     }
 
+
+    public static function deleteNonAdmin(int $id): bool
+    {
+        $stmt = Database::pdo()->prepare("DELETE FROM users WHERE id = :id AND role != 'admin'");
+        return $stmt->execute([':id' => $id]);
+    }
+
+    public static function firstAdminId(): ?int
+    {
+        $stmt = Database::pdo()->query("SELECT id FROM users WHERE role='admin' ORDER BY id ASC LIMIT 1");
+        $id = $stmt->fetchColumn();
+        return $id ? (int) $id : null;
+    }
+
     public static function setActive(int $id, bool $active): void
     {
         $stmt = Database::pdo()->prepare('UPDATE users SET active = :active WHERE id = :id');

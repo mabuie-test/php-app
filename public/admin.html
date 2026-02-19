@@ -76,6 +76,21 @@
     body {
       transition: padding-top 0.2s ease;
     }
+
+
+    /* TERMINAL DE SUPORTE ALINHADO AO PADRÃO DOS CARDS */
+    .support-terminal {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: linear-gradient(135deg, #0f234a, #0c1c36);
+    }
+    .support-terminal .card-header h3 {
+      margin: 0;
+    }
+    .support-terminal .chat-board {
+      min-height: 280px;
+      max-height: 420px;
+    }
   </style>
 </head>
 <body class="page admin-page" data-page="dashboard">
@@ -91,7 +106,7 @@
       </div>
       <nav class="navbar">
         <div class="nav-links">
-     
+          <a href="/help.html"><i class="fas fa-circle-question"></i> Ajuda</a>
           <button id="logout" class="ghost"><i class="fas fa-sign-out-alt"></i> Sair</button>
         </div>
       </nav>
@@ -125,6 +140,12 @@
       <p class="muted">Comissões, levantamentos e ranking de referências.</p>
     </a>
 
+
+    <a class="card link-card" href="/admin-leads.html">
+      <h3><i class="fas fa-bullhorn"></i> Leads de Marketing</h3>
+      <p class="muted">Leads captados no lead magnet com origem e interesse.</p>
+    </a>
+
     <a class="card link-card" href="/admin-metrics.html">
       <h3><i class="fas fa-chart-line"></i> Métricas e dashboards</h3>
       <p class="muted">Gráficos de receita, estados e serviços.</p>
@@ -134,7 +155,55 @@
       <h3><i class="fas fa-comments"></i> Estação de trabalho</h3>
       <p class="muted">Mensagens internas com anexos associados às encomendas.</p>
     </a>
+
+
+    <button class="card link-card" id="open-support-terminal" type="button">
+      <h3><i class="fas fa-headset"></i> Terminal de atendimento ao cliente</h3>
+      <p class="muted">Abrir central de atendimento (chat, transferência, anexos e rating).</p>
+    </button>
+
   </main>
+
+  <div id="support-modal" class="modal hidden" aria-hidden="true">
+    <div class="modal-content support-terminal" style="max-width:1200px;width:96%;">
+      <div class="card-header">
+        <h3><i class="fas fa-headset"></i> Terminal de atendimento ao cliente</h3>
+        <div class="inline-group">
+          <select id="support-session-filter">
+            <option value="">Todas</option>
+            <option value="open">Abertas</option>
+            <option value="waiting_rating">Aguardando avaliação</option>
+            <option value="closed">Encerradas</option>
+          </select>
+          <button class="ghost" id="support-refresh">Atualizar</button>
+          <button class="ghost" id="close-support-terminal">Fechar</button>
+        </div>
+      </div>
+      <div class="support-grid">
+        <aside>
+          <div id="support-sessions" class="list"></div>
+        </aside>
+        <div>
+          <div id="support-rating-preview" class="quote muted" style="margin-bottom:.7rem;display:none"></div>
+          <div class="inline-group" style="margin-bottom:.7rem">
+            <button id="support-claim" class="btn btn-primary">Assumir atendimento</button>
+            <select id="support-transfer-agent"></select>
+            <button id="support-transfer" class="ghost">Transferir</button>
+            <button id="support-close" class="ghost">Finalizar atendimento</button>
+          </div>
+          <div id="support-messages" class="chat-board"></div>
+          <div class="chat-compose">
+            <textarea id="support-reply" rows="2" placeholder="Responder cliente..."></textarea>
+            <div class="inline-group">
+              <input type="file" id="support-attachment" />
+              <button id="support-send" class="btn btn-primary">Enviar resposta</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
   <!-- FOOTER ORIGINAL COM ÍCONES -->
   <footer class="footer">
@@ -155,6 +224,7 @@
   </footer>
 
   <script src="/admin.js"></script>
+  <script src="/admin-support.js"></script>
   <script>
     // ===== AJUSTE INTELIGENTE DO PADDING-TOP =====
     // NUNCA DEIXA O CONTEÚDO ESCONDIDO ATRÁS DO HEADER
@@ -215,5 +285,6 @@
       }
     })();
   </script>
+  <script src="/nav-mobile.js"></script>
 </body>
 </html>

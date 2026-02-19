@@ -16,13 +16,25 @@ class ToolsController
             // anónimo aceitável — continuamos
         }
 
-        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+        $raw = file_get_contents('php://input') ?: '';
+        $data = json_decode($raw, true);
+        if (!is_array($data)) {
+            $data = $_POST;
+        }
+
         $tool = $data['tool'] ?? ($data['tool_id'] ?? 'unknown');
+        if (is_string($tool)) {
+            $tool = trim($tool);
+        }
+        if (!$tool) {
+            $tool = 'unknown';
+        }
+
         $userId = $user['id'] ?? null;
 
         // regista no audit para métricas (facilita visualização no admin -> audits)
         AuditHelper::log($userId, 'tool:use', ['tool' => $tool]);
 
-        Response::json(['message' => 'tracked']);
+        Response::json(['message' => 'tracked', 'tool' => $tool]);
     }
 }

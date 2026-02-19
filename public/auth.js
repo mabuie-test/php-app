@@ -1,12 +1,48 @@
 const apiBase = '/api';
 let authToken = localStorage.getItem('token') || '';
 
+function clearReferral() {
+  sessionStorage.removeItem('referral_ref');
+  sessionStorage.removeItem('referral_ref_ts');
+  localStorage.removeItem('referral_ref');
+}
+
+function getActiveReferral() {
+  const code = sessionStorage.getItem('referral_ref');
+  const ts = Number(sessionStorage.getItem('referral_ref_ts') || 0);
+  const TTL = 30 * 60 * 1000; // 30 minutos
+  if (!code || !ts || (Date.now() - ts) > TTL) {
+    clearReferral();
+    return '';
+  }
+  return code;
+}
+
 function captureReferral() {
   const params = new URLSearchParams(window.location.search);
   const code = params.get('ref');
-  if (code) {
-    localStorage.setItem('referral_ref', code);
+
+  if (!code) {
+    // evita reaproveitar código antigo em novos registos não indicados
+    clearReferral();
+    return;
   }
+
+  sessionStorage.setItem('referral_ref', code);
+  sessionStorage.setItem('referral_ref_ts', String(Date.now()));
+  localStorage.removeItem('referral_ref');
+
+  let visitor = localStorage.getItem('affiliate_visitor_id');
+  if (!visitor) {
+    visitor = `v_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+    localStorage.setItem('affiliate_visitor_id', visitor);
+  }
+
+  fetch(`${apiBase}/affiliates/click`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, visitor }),
+  }).catch(() => {});
 }
 
 captureReferral();
@@ -30,7 +66,7 @@ function toggleNav() {
 function renderReferralTag() {
   const tag = document.getElementById('referral-indicator');
   if (!tag) return;
-  const code = localStorage.getItem('referral_ref');
+  const code = getActiveReferral();
   if (code) {
     tag.textContent = `Indicação aplicada: ${code}`;
     tag.classList.remove('hidden');
@@ -74,7 +110,7 @@ if (signupForm) {
   signupForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const payload = Object.fromEntries(new FormData(signupForm).entries());
-    const ref = localStorage.getItem('referral_ref');
+    const ref = getActiveReferral();
     if (ref) payload.referred_by = ref;
     const res = await fetch(`${apiBase}/auth/register`, {
       method: 'POST',
@@ -83,6 +119,7 @@ if (signupForm) {
     });
     const data = await res.json();
     if (res.ok && data.token) {
+      clearReferral();
       handleLogin(data.token, data.user?.role);
     } else {
       alert(data.message || 'Erro no registo');
@@ -102,6 +139,7 @@ if (signinForm) {
     });
     const data = await res.json();
     if (res.ok && data.token) {
+      clearReferral();
       handleLogin(data.token, data.user?.role);
     } else {
       alert(data.message || 'Erro no login');

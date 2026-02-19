@@ -28,6 +28,7 @@ async function loadInvoice() {
     const order = data.order;
     const body = document.getElementById('invoice-body');
     const materials = order.materiais_uploads ? JSON.parse(order.materiais_uploads) : [];
+    const descriptionHtml = (order.descricao || '—').replace(/\n/g, '<br>');
     const proofForm = document.getElementById('proof-form');
     if (proofForm) {
       proofForm.dataset.invoice = order.invoice_id || order.id;
@@ -35,9 +36,14 @@ async function loadInvoice() {
     body.innerHTML = `
       <p><strong>Fatura:</strong> ${order.invoice_numero || '—'}</p>
       <p><strong>Estado:</strong> ${order.invoice_estado || 'EMITIDA'}</p>
-      <p><strong>Trabalho:</strong> ${order.tipo} (${order.area})</p>
-      <p><strong>Nível:</strong> ${order.nivel} · Páginas: ${order.paginas}</p>
-      <p><strong>Complexidade:</strong> ${order.complexidade} · Urgência: ${order.urgencia}</p>
+      <p><strong>Trabalho:</strong> ${order.tipo || '—'} (${order.area || '—'})</p>
+      <p><strong>Nível:</strong> ${order.nivel || '—'} · <strong>Páginas:</strong> ${order.paginas || '—'}</p>
+      <p><strong>Norma:</strong> ${order.norma || '—'}</p>
+      <p><strong>Complexidade:</strong> ${order.complexidade || '—'} · <strong>Urgência:</strong> ${order.urgencia || '—'}</p>
+      <p><strong>Prazo desejado:</strong> ${order.prazo_entrega || '—'}</p>
+      <p><strong>Descrição do pedido:</strong><br>${descriptionHtml}</p>
+      <p><strong>Materiais informados:</strong> ${order.materiais_info || 'Não'}</p>
+      <p><strong>Percentual de uso dos materiais:</strong> ${order.materiais_percentual || '—'}${order.materiais_percentual ? '%' : ''}</p>
       <p><strong>Valor:</strong> ${order.valor_total || order.total || '—'} MZN</p>
       <p><strong>Materiais fornecidos:</strong> ${materials.length ? materials.map((m) => `<a href="${m}" target="_blank">${m.split('/').pop()}</a>`).join(', ') : 'Nenhum'}</p>
       ${order.comprovativo ? `<p class="muted">Comprovativo já enviado: <a href="${order.comprovativo}" target="_blank">abrir</a></p>` : ''}

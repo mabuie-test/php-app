@@ -333,8 +333,13 @@ public static function payouts(): void
 
     public static function listUsers(): void
     {
-        self::requireAdmin();
-        Response::json(['users' => User::listAll()]);
+        $admin = self::requireAdmin();
+        $firstAdminId = User::firstAdminId();
+        Response::json([
+            'users' => User::listAll(),
+            'can_delete_users' => $firstAdminId !== null && (int) $admin['id'] === $firstAdminId,
+            'first_admin_id' => $firstAdminId,
+        ]);
     }
 
     /**
@@ -352,6 +357,36 @@ public static function payouts(): void
         // Optionally: when deactivating, invalidate tokens / sessions (requires session store).
         // For now, ensure login checks active status (AuthController should be adjusted accordingly).
         Response::json(['message' => 'Estado atualizado']);
+    }
+
+    public static function deleteUser(): void
+    {
+        $admin = self::requireAdmin();
+        $targetId = (int) ($_POST['user_id'] ?? 0);
+        if ($targetId <= 0) {
+            Response::json(['message' => 'user_id obrigatório'], 400);
+            return;
+        }
+
+        $firstAdminId = User::firstAdminId();
+        if ($firstAdminId === null || (int) $admin['id'] !== $firstAdminId) {
+            Response::json(['message' => 'Apenas o primeiro admin pode eliminar utilizadores'], 403);
+            return;
+        }
+
+        $target = User::findById($targetId);
+        if (!$target) {
+            Response::json(['message' => 'Utilizador não encontrado'], 404);
+            return;
+        }
+        if (($target['role'] ?? '') === 'admin') {
+            Response::json(['message' => 'Não é permitido eliminar administradores'], 400);
+            return;
+        }
+
+        User::deleteNonAdmin($targetId);
+        AuditHelper::log($admin['id'], 'user:delete', ['user_id' => $targetId, 'email' => $target['email'] ?? null]);
+        Response::json(['message' => 'Utilizador eliminado']);
     }
 
     /**
@@ -455,6 +490,87 @@ public static function payouts(): void
 
         AuditHelper::log($admin['id'], 'affiliate:payout:update', ['payout_id' => $payoutId, 'status' => $finalStatus]);
         Response::json(['message' => 'Pagamento de afiliado atualizado', 'status' => $finalStatus]);
+    }
+
+
+    public static function marketingLeads(): void
+    {
+        self::requireAdmin();
+
+        $q = trim((string)($_GET['q'] ?? ''));
+        $source = trim((string)($_GET['source'] ?? ''));
+        $interest = trim((string)($_GET['interest'] ?? ''));
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = max(1, min(100, (int)($_GET['per_page'] ?? 20)));
+        $offset = ($page - 1) * $perPage;
+
+        $pdo = Database::pdo();
+        $where = ["action = 'marketing:lead'"];
+        $params = [];
+
+        if ($q !== '') {
+            $where[] = "(JSON_UNQUOTE(JSON_EXTRACT(meta, '$.name')) LIKE :q OR JSON_UNQUOTE(JSON_EXTRACT(meta, '$.email')) LIKE :q OR JSON_UNQUOTE(JSON_EXTRACT(meta, '$.phone')) LIKE :q)";
+            $params[':q'] = '%' . $q . '%';
+        }
+        if ($source !== '') {
+            $where[] = "JSON_UNQUOTE(JSON_EXTRACT(meta, '$.source')) = :source";
+            $params[':source'] = $source;
+        }
+        if ($interest !== '') {
+            $where[] = "JSON_UNQUOTE(JSON_EXTRACT(meta, '$.interest')) = :interest";
+            $params[':interest'] = $interest;
+        }
+
+        $whereSql = implode(' AND ', $where);
+
+        $countSql = "SELECT COUNT(*) FROM audits WHERE {$whereSql}";
+        $countStmt = $pdo->prepare($countSql);
+        foreach ($params as $k => $v) $countStmt->bindValue($k, $v);
+        $countStmt->execute();
+        $total = (int)$countStmt->fetchColumn();
+
+        $sql = "SELECT id, created_at,
+                       JSON_UNQUOTE(JSON_EXTRACT(meta, '$.name')) as name,
+                       JSON_UNQUOTE(JSON_EXTRACT(meta, '$.email')) as email,
+                       JSON_UNQUOTE(JSON_EXTRACT(meta, '$.phone')) as phone,
+                       JSON_UNQUOTE(JSON_EXTRACT(meta, '$.interest')) as interest,
+                       JSON_UNQUOTE(JSON_EXTRACT(meta, '$.source')) as source
+                FROM audits
+                WHERE {$whereSql}
+                ORDER BY id DESC
+                LIMIT :lim OFFSET :off";
+        $stmt = $pdo->prepare($sql);
+        foreach ($params as $k => $v) $stmt->bindValue($k, $v);
+        $stmt->bindValue(':lim', $perPage, \PDO::PARAM_INT);
+        $stmt->bindValue(':off', $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+        $leads = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $sourceSql = "SELECT JSON_UNQUOTE(JSON_EXTRACT(meta, '$.source')) as source, COUNT(*) as total
+                      FROM audits
+                      WHERE action = 'marketing:lead'
+                      GROUP BY JSON_UNQUOTE(JSON_EXTRACT(meta, '$.source'))
+                      ORDER BY total DESC";
+        $sources = $pdo->query($sourceSql)->fetchAll(\PDO::FETCH_ASSOC);
+
+        $interestSql = "SELECT JSON_UNQUOTE(JSON_EXTRACT(meta, '$.interest')) as interest, COUNT(*) as total
+                        FROM audits
+                        WHERE action = 'marketing:lead'
+                        GROUP BY JSON_UNQUOTE(JSON_EXTRACT(meta, '$.interest'))
+                        ORDER BY total DESC";
+        $interests = $pdo->query($interestSql)->fetchAll(\PDO::FETCH_ASSOC);
+
+        Response::json([
+            'leads' => $leads,
+            'pagination' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'total_pages' => (int)ceil($total / $perPage),
+            ],
+            'sources' => $sources,
+            'interests' => $interests,
+        ]);
     }
 
     public static function audits(): void

@@ -29,6 +29,8 @@ body {
   line-height: 1.6;
   min-height: 100vh;
   padding-top: 110px; /* header mais compacto */
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 body:not(.logged-in) {
@@ -208,8 +210,16 @@ header {
 }
 
 .wrap {
-  max-width: 1200px;
+  width: min(100% - 2rem, 1200px);
   margin: 0 auto;
+}
+
+img,
+svg,
+video,
+canvas,
+iframe {
+  max-width: 100%;
 }
 
 /* ============================================
@@ -540,9 +550,9 @@ header {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
-  padding: 20px;
+  padding: clamp(14px, 2vw, 20px);
   justify-content: center;
-  max-width: 1280px;
+  width: min(100% - 1.5rem, 1280px);
   margin: 0 auto;
 }
 
@@ -550,7 +560,7 @@ header {
   background: linear-gradient(135deg, #0f234a, #0c1c36);
   padding: 1.8rem;
   border-radius: 14px;
-  width: 360px;
+  width: min(100%, 360px);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s;
@@ -800,6 +810,10 @@ body.auth-page {
   gap: 16px;
 }
 
+.cards-grid > .card.wide {
+  grid-column: 1 / -1;
+}
+
 .stacked {
   display: flex;
   flex-direction: column;
@@ -825,6 +839,118 @@ body.auth-page {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ============================================
+   VISUAL POLISH + RESPONSIVIDADE FLUÍDA
+   ============================================ */
+section,
+.card,
+.service-featured-card,
+.cta-box,
+.modal-content,
+.modal-card {
+  scroll-margin-top: 130px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+p,
+li,
+label,
+small,
+.muted {
+  text-wrap: pretty;
+}
+
+.card,
+.service-featured-card,
+.cta-box,
+.grid-panels div,
+.modal-content,
+.modal-card,
+.proof,
+.quote {
+  backdrop-filter: blur(8px);
+}
+
+.card,
+.service-featured-card,
+.btn,
+.tiny-ghost,
+.service-menu button,
+.pill,
+.navbar a,
+.nav-list a {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, color 0.25s ease, background-color 0.25s ease;
+}
+
+.btn,
+.tiny-ghost,
+.service-menu button,
+.pill-list button,
+.navbar .ghost,
+input,
+select,
+textarea {
+  min-height: 42px;
+}
+
+.hero,
+.services-highlight,
+.stats-section,
+.process-section {
+  padding-inline: clamp(1rem, 2.8vw, 2rem);
+}
+
+.hero h2,
+.section-title {
+  font-size: clamp(1.6rem, 3.3vw, 2.3rem);
+}
+
+.hero > p,
+.section-subtitle {
+  font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+}
+
+.services-grid-featured,
+.cards-grid,
+.process-steps,
+.stats-grid,
+.grid-panels,
+.service-menu {
+  width: min(100%, 1200px);
+  margin-inline: auto;
+}
+
+.card-header,
+.filters,
+.inline-group,
+.stacked-actions,
+.share-row,
+.modal-actions {
+  row-gap: 0.6rem;
+}
+
+/* Melhor ajuste em telas intermediárias */
+@media (max-width: 1024px) {
+  .services-grid-featured,
+  .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+
+  .footer {
+    gap: 1.3rem;
+  }
 }
 
 /* ============================================
@@ -1232,7 +1358,33 @@ canvas {
   .header-content {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.3rem;
+    gap: 0.5rem;
+  }
+
+  .navbar {
+    width: 100%;
+  }
+
+  .nav-links {
+    width: 100%;
+    gap: 0.6rem;
+  }
+
+  .nav-links > * {
+    flex: 1 1 calc(50% - 0.6rem);
+    min-width: 140px;
+  }
+
+  .navbar a,
+  .navbar .ghost {
+    width: 100%;
+    justify-content: center;
+    padding: 0.45rem 0.7rem;
+    border-radius: 8px;
+  }
+
+  .navbar a {
+    background: rgba(255, 255, 255, 0.04);
   }
 
   .logo-text {
@@ -1260,6 +1412,15 @@ canvas {
     padding: 1.2rem;
   }
 
+  .proof {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .card {
+    padding: 1.2rem;
+  }
+
   /* admin-affiliates mobile */
   .admin-affiliates-page .content {
     padding: 1rem;
@@ -1280,11 +1441,34 @@ canvas {
 }
 
 @media (max-width: 480px) {
-  .nav-links {
-    gap: 0.5rem;
+  body,
+  body:not(.logged-in) {
+    padding-top: 74px;
   }
+
+  header {
+    min-height: 74px;
+  }
+
+  .nav-links {
+    gap: 0.45rem;
+  }
+
+  .nav-links > * {
+    flex: 1 1 100%;
+    min-width: 100%;
+  }
+
   .navbar a {
     font-size: 0.8rem;
+  }
+
+  .container {
+    padding-inline: 0.85rem;
+  }
+
+  .cta-box {
+    padding: 1.35rem;
   }
 }
 
@@ -1444,3 +1628,213 @@ canvas {
 /* ============================================
    FIM – TODAS AS PÁGINAS COBERTAS
    ============================================ */
+
+/* ============================================
+   TERMINAL DE SUPORTE (admin + widget cliente)
+   ============================================ */
+.support-terminal {
+  width: 100%;
+}
+
+.support-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) 1fr;
+  gap: 1rem;
+}
+
+#support-sessions {
+  max-height: 460px;
+  overflow: auto;
+}
+
+#support-messages {
+  min-height: 320px;
+  max-height: 420px;
+}
+
+#support-reply {
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .support-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+#support-modal .modal-content.support-terminal {
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#support-modal .support-grid {
+  flex: 1;
+  min-height: 0;
+}
+
+#support-modal #support-sessions,
+#support-modal #support-messages {
+  max-height: none;
+}
+
+#support-modal #support-messages {
+  min-height: 220px;
+  height: 100%;
+}
+
+#support-modal .support-grid > div:last-child {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+#support-modal .chat-compose {
+  margin-top: auto;
+}
+
+@media (max-width: 768px) {
+  #support-modal {
+    align-items: flex-start;
+    padding: 0.5rem;
+  }
+
+  #support-modal .modal-content.support-terminal {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 95vh;
+    padding: 0.8rem;
+    overflow-y: auto;
+  }
+
+  #support-modal .card-header {
+    position: sticky;
+    top: 0;
+    background: var(--dark);
+    z-index: 2;
+    padding-bottom: 0.45rem;
+  }
+
+  #support-modal .chat-compose {
+    position: sticky;
+    bottom: 0;
+    background: var(--dark);
+    padding-top: 0.45rem;
+  }
+
+  #support-modal .chat-compose .inline-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #support-modal .chat-compose .inline-group > * {
+    width: 100%;
+  }
+}
+
+/* ============================================
+   HAMBURGUER MOBILE COMPACTO
+   ============================================ */
+.mobile-hamburger {
+  display: none;
+  width: 26px;
+  height: 22px;
+  padding: 3px;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 6px;
+  background: rgba(15,23,42,0.65);
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 1002;
+}
+.mobile-hamburger span {
+  display: block;
+  height: 2px;
+  margin: 3px 0;
+  background: var(--gray-light);
+}
+
+@media (max-width: 768px) {
+  .mobile-hamburger { display: block; }
+
+  header {
+    padding-right: 2.8rem;
+  }
+
+  header .navbar,
+  header nav.navbar,
+  header > nav {
+    display: none;
+    width: 100%;
+  }
+
+  body.navbar-open header {
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+
+  body.navbar-open header .navbar,
+  body.navbar-open header nav.navbar,
+  body.navbar-open header > nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    width: 100%;
+    margin-top: 0.4rem;
+  }
+
+  body.navbar-open header .nav-links {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  body.navbar-open header .nav-links > * {
+    min-width: 0;
+    width: 100%;
+    flex: 1 1 auto;
+  }
+
+  body.navbar-open header .navbar a,
+  body.navbar-open header .navbar .ghost,
+  body.navbar-open header nav a,
+  body.navbar-open header nav button {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* ============================================
+   PADRONIZAÇÃO VISUAL DAS PÁGINAS DE FERRAMENTAS/AJUDA
+   ============================================ */
+.tools-page .tools {
+  width: min(100% - 1.5rem, 980px);
+  margin: 1.2rem auto 2rem;
+  padding: 0.2rem;
+}
+
+.tools-page .card {
+  width: 100%;
+}
+
+.tools-page .list a,
+.tools-page .internal a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.tools-page .internal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+@media (max-width: 768px) {
+  .tools-page .tools {
+    width: min(100% - 1rem, 980px);
+  }
+}

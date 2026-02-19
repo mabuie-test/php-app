@@ -23,6 +23,30 @@ class Audit
         return $stmt->fetchAll();
     }
 
+
+    public static function affiliateClickStats(string $code): array
+    {
+        $pdo = Database::pdo();
+
+        $totalStmt = $pdo->prepare("SELECT COUNT(*) FROM audits WHERE action = 'affiliate:click' AND JSON_UNQUOTE(JSON_EXTRACT(meta, '$.code')) = :code");
+        $totalStmt->execute([':code' => $code]);
+        $total = (int) $totalStmt->fetchColumn();
+
+        $uniqStmt = $pdo->prepare("SELECT COUNT(DISTINCT JSON_UNQUOTE(JSON_EXTRACT(meta, '$.visitor'))) FROM audits WHERE action = 'affiliate:click' AND JSON_UNQUOTE(JSON_EXTRACT(meta, '$.code')) = :code");
+        $uniqStmt->execute([':code' => $code]);
+        $unique = (int) $uniqStmt->fetchColumn();
+
+        $todayStmt = $pdo->prepare("SELECT COUNT(*) FROM audits WHERE action = 'affiliate:click' AND JSON_UNQUOTE(JSON_EXTRACT(meta, '$.code')) = :code AND DATE(created_at) = CURDATE()");
+        $todayStmt->execute([':code' => $code]);
+        $today = (int) $todayStmt->fetchColumn();
+
+        return [
+            'total' => $total,
+            'unique' => $unique,
+            'today' => $today,
+        ];
+    }
+
     public static function listForUser(int $userId, int $limit = 20): array
     {
         $stmt = Database::pdo()->prepare('SELECT * FROM audits WHERE user_id = :user_id ORDER BY id DESC LIMIT :lim');
