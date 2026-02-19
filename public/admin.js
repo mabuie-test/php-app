@@ -138,7 +138,7 @@ async function loadOrders() {
       // Approve / Reject buttons (only if invoice exists AND order not already in a terminal paid/processed state)
       if (invoiceId) {
         // If invoice already paid, we still show the download and final upload controls, but hide approve/reject.
-        if (invoiceEstado !== 'PAGA') {
+        if (invoiceEstado === 'PENDENTE_VALIDACAO') {
           const approveBtn = document.createElement('button');
           approveBtn.className = 'primary';
           approveBtn.textContent = 'Marcar pago';
@@ -231,11 +231,16 @@ async function approveInvoice(invoiceId, number, email) {
 
 async function rejectInvoice(invoiceId, orderId) {
   if (!invoiceId) return;
-  const ok = await confirmAction('Deseja marcar o pagamento como rejeitado/pendente?');
+  const reason = prompt('Motivo da rejeição (obrigatório):');
+  if (!reason || !reason.trim()) {
+    return toast('Informe o motivo da rejeição.');
+  }
+  const ok = await confirmAction('Confirmar rejeição deste comprovativo?');
   if (!ok) return;
   const form = new FormData();
   form.set('invoice_id', invoiceId);
   form.set('order_id', orderId);
+  form.set('reason', reason.trim());
   const res = await fetch(`${apiBase}/admin/invoices/reject`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${authToken}` },
@@ -243,7 +248,7 @@ async function rejectInvoice(invoiceId, orderId) {
   });
   const data = await res.json();
   if (!res.ok) return toast(data.message || 'Erro ao rejeitar');
-  toast('Pagamento devolvido ao estado pendente.');
+  toast('Pagamento rejeitado.');
   await loadOrders();
   await loadMetrics();
 }
@@ -289,16 +294,32 @@ async function loadUsers() {
         <p class="muted">${user.email} · ${user.role}</p>
       </div>
       <div class="stacked-actions">
-        <button class="ghost" data-action="toggle">${user.active ? 'Desativar' : 'Ativar'}</button>
-        ${canDeleteUsers && !isAdmin ? '<button class="ghost" data-action="delete">Eliminar</button>' : ''}
+        <button class="ghost" data-action="toggle">${user.active ? 'Desativar + ocultar' : 'Ativar'}</button>
+        ${!isAdmin ? '<button class="ghost" data-action="anonymize">Anonimizar</button>' : ''}
+        ${canDeleteUsers && !isAdmin ? '<button class="ghost" data-action="delete">Eliminar definitivo</button>' : ''}
       </div>
     `;
 
     row.querySelector('[data-action="toggle"]').onclick = () => toggleUser(user.id, !user.active);
     const delBtn = row.querySelector('[data-action="delete"]');
     if (delBtn) delBtn.onclick = () => deleteUser(user.id, user.email);
+    const anonBtn = row.querySelector('[data-action="anonymize"]');
+    if (anonBtn) anonBtn.onclick = () => anonymizeUser(user.id, user.email);
     list.appendChild(row);
   });
+}
+
+
+async function anonymizeUser(userId, email) {
+  const ok = await confirmAction(`Anonimizar utilizador ${email}?`);
+  if (!ok) return;
+  const form = new FormData();
+  form.set('user_id', userId);
+  const res = await fetch(`${apiBase}/admin/users/anonymize`, { method: 'POST', headers: { Authorization: `Bearer ${authToken}` }, body: form });
+  const data = await res.json();
+  if (!res.ok) return toast(data.message || 'Erro ao anonimizar');
+  toast('Utilizador anonimizado');
+  loadUsers();
 }
 
 async function deleteUser(userId, email) {

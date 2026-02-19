@@ -146,7 +146,7 @@ class OrderController
         }
         Invoice::saveComprovativo($invoiceId, '/uploads/comprovativos/' . $safeName);
         Order::updateEstado((int) ($_POST['order_id'] ?? 0), 'PAGAMENTO_EM_VALIDACAO');
-        AuditHelper::log($user['id'], 'invoice:proof', ['invoice_id' => $invoiceId]);
+        AuditHelper::log($user['id'], 'invoice:proof', ['invoice_id' => $invoiceId, 'at' => date('c')]);
         Mailer::send($user['email'], 'Comprovativo recebido', 'Recebemos o comprovativo da fatura #' . $invoiceId . '. Iremos validar em breve.');
         $adminRecipients = User::adminEmails();
         $fallbackAdmin = Config::get('ADMIN_NOTIFY_EMAIL');

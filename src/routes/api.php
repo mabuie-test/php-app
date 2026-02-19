@@ -138,6 +138,11 @@ if ($uri === '/api/admin/users/delete' && $method === 'POST') {
     AdminController::deleteUser();
     return;
 }
+
+if ($uri === '/api/admin/users/anonymize' && $method === 'POST') {
+    AdminController::anonymizeUser();
+    return;
+}
 if ($uri === '/api/admin/feedback' && $method === 'GET') {
     AdminController::feedback();
     return;
@@ -160,6 +165,19 @@ if ($uri === '/api/admin/metrics' && $method === 'GET') {
 }
 if ($uri === '/api/admin/audits' && $method === 'GET') {
     AdminController::audits();
+    return;
+}
+
+if ($uri === '/api/admin/notifications' && $method === 'GET') {
+    AdminController::adminNotifications();
+    return;
+}
+if ($uri === '/api/admin/affiliates/conversion' && $method === 'GET') {
+    AdminController::affiliateConversionReport();
+    return;
+}
+if ($uri === '/api/admin/sla' && $method === 'GET') {
+    AdminController::slaDashboard();
     return;
 }
 

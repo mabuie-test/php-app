@@ -20,6 +20,17 @@ class Invoice
     public static function create(array $data): int
     {
         $pdo = Database::pdo();
+        $estado = $data['estado'] ?? 'EMITIDA';
+        $detalhes = $data['detalhes'] ?? [];
+        if (!is_array($detalhes)) {
+            $detalhes = [];
+        }
+        $detalhes['state_history'] = [[
+            'from' => null,
+            'to' => $estado,
+            'reason' => $data['estado_reason'] ?? 'Fatura criada',
+            'at' => date('c'),
+        ]];
         $sql = 'INSERT INTO invoices (
             order_id, user_id, numero, valor_total, detalhes, estado, vencimento, comprovativo
         ) VALUES (
@@ -31,8 +42,8 @@ class Invoice
             ':user_id' => $data['user_id'],
             ':numero' => $data['numero'],
             ':valor_total' => $data['valor_total'],
-            ':detalhes' => json_encode($data['detalhes'] ?? []),   // array → JSON
-            ':estado' => $data['estado'] ?? 'EMITIDA',
+            ':detalhes' => json_encode($detalhes),
+            ':estado' => $estado,
             ':vencimento' => $data['vencimento'] ?? date('Y-m-d H:i:s', strtotime('+24 hours')),
             ':comprovativo' => $data['comprovativo'] ?? null,
         ]);
@@ -44,8 +55,7 @@ class Invoice
      */
     public static function updateEstado(int $id, string $estado): void
     {
-        $stmt = Database::pdo()->prepare('UPDATE invoices SET estado = :estado WHERE id = :id');
-        $stmt->execute([':estado' => $estado, ':id' => $id]);
+        self::transitionState($id, $estado);
     }
 
     /**
@@ -53,8 +63,42 @@ class Invoice
      */
     public static function saveComprovativo(int $id, string $path): void
     {
-        $stmt = Database::pdo()->prepare('UPDATE invoices SET comprovativo = :path, estado = "PENDENTE_VALIDACAO" WHERE id = :id');
+        $stmt = Database::pdo()->prepare('UPDATE invoices SET comprovativo = :path WHERE id = :id');
         $stmt->execute([':path' => $path, ':id' => $id]);
+        self::transitionState($id, 'PENDENTE_VALIDACAO', 'Comprovativo submetido pelo cliente');
+    }
+
+    public static function transitionState(int $id, string $to, ?string $reason = null): void
+    {
+        $invoice = self::findById($id);
+        if (!$invoice) {
+            return;
+        }
+        $from = $invoice['estado'] ?? null;
+        $detalhes = [];
+        if (!empty($invoice['detalhes'])) {
+            $decoded = is_string($invoice['detalhes']) ? json_decode($invoice['detalhes'], true) : $invoice['detalhes'];
+            if (is_array($decoded)) {
+                $detalhes = $decoded;
+            }
+        }
+        $history = $detalhes['state_history'] ?? [];
+        if (!is_array($history)) {
+            $history = [];
+        }
+        $history[] = [
+            'from' => $from,
+            'to' => $to,
+            'reason' => $reason,
+            'at' => date('c'),
+        ];
+        $detalhes['state_history'] = $history;
+        if ($reason !== null && $to === 'REJEITADA') {
+            $detalhes['rejection_reason'] = $reason;
+            $detalhes['rejected_at'] = date('c');
+        }
+        $stmt = Database::pdo()->prepare('UPDATE invoices SET estado = :estado, detalhes = :detalhes WHERE id = :id');
+        $stmt->execute([':estado' => $to, ':detalhes' => json_encode($detalhes), ':id' => $id]);
     }
 
     /**
