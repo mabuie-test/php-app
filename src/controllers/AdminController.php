@@ -147,8 +147,6 @@ class AdminController
         Response::json(['message' => 'Pagamento rejeitado', 'status' => 'REJEITADA']);
     }
 
-// NO ARQUIVO src/controllers/AdminController.php, ADICIONE estes métodos:
-
 /**
  * Listar comissões de afiliados (para admin-affiliates.html)
  */

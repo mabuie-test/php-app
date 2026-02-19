@@ -289,6 +289,8 @@ async function uploadFinal(orderId, input) {
   if (!input?.files?.length) return toast('Selecione um ficheiro primeiro');
   const ok = await confirmAction('Entregar este documento ao cliente?');
   if (!ok) return;
+  const triggerBtn = input.closest('.upload-zone')?.querySelector('button') || null;
+  if (triggerBtn) triggerBtn.disabled = true;
   const form = new FormData();
   form.set('order_id', orderId);
   form.append('final', input.files[0]);
@@ -306,15 +308,16 @@ async function uploadFinal(orderId, input) {
     },
   });
   const data = res.data || {};
-  if (!res.ok) return toast(data.message || 'Erro ao enviar documento');
+  if (!res.ok) { if (triggerBtn) triggerBtn.disabled = false; return toast(data.message || 'Erro ao enviar documento'); }
   toast('Documento final submetido.');
   await loadOrders();
   setTimeout(() => progressBox?.classList.remove('visible'), 1200);
+  if (triggerBtn) triggerBtn.disabled = false;
 }
 
 async function loadUsers() {
   if (!requireAdmin()) return;
-  const res = await fetch(`${apiBase}/admin/users`, { headers: { Authorization: `Bearer ${authToken}` } });
+  const res = await fetch(`${apiBase}/admin/users?include_inactive=1`, { headers: { Authorization: `Bearer ${authToken}` } });
   const data = await res.json();
   const list = document.getElementById('admin-users');
   if (!list) return;
@@ -332,7 +335,7 @@ async function loadUsers() {
     row.innerHTML = `
       <div>
         <strong>${user.name}</strong>
-        <p class="muted">${user.email} · ${user.role}</p>
+        <p class="muted">${user.email} · ${user.role} · ${user.active ? 'ativo' : 'inativo/oculto'}</p>
       </div>
       <div class="stacked-actions">
         <button class="ghost" data-action="toggle">${user.active ? 'Desativar + ocultar' : 'Ativar'}</button>
@@ -672,6 +675,7 @@ async function sendAdminChat() {
     resData = res.data || {};
     okResp = res.ok;
     setTimeout(() => progressBox?.classList.remove('visible'), 1200);
+  if (triggerBtn) triggerBtn.disabled = false;
   } else {
     const res = await fetch(`${apiBase}/admin/chat`, { method: 'POST', headers: { Authorization: `Bearer ${authToken}` }, body: form });
     resData = await res.json();

@@ -115,7 +115,7 @@ class User
         $stmt->execute([':id' => $id]);
         $counts['invoices'] = (int) $stmt->fetchColumn();
 
-        $stmt = $pdo->prepare('SELECT COUNT(*) FROM feedback WHERE user_id = :id');
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM feedbacks WHERE user_id = :id');
         $stmt->execute([':id' => $id]);
         $counts['feedback'] = (int) $stmt->fetchColumn();
 

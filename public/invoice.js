@@ -114,6 +114,8 @@ if (proofForm) {
   proofForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!requireAuth()) return;
+    const submitBtn = proofForm.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
     const form = new FormData();
     form.set('invoice_id', proofForm.dataset.invoice || (new URLSearchParams(window.location.search)).get('invoice_id') || '');
     form.set('order_id', orderId);
@@ -143,6 +145,7 @@ if (proofForm) {
       alert(err.message);
     } finally {
       setTimeout(() => progressBox?.classList.remove('visible'), 1200);
+      if (submitBtn) submitBtn.disabled = false;
     }
   });
 }
